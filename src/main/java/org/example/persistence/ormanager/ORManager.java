@@ -1,6 +1,6 @@
-package ORManager.src.main.java.org.example;
+package org.example.persistence.ormanager;
 
-import ORManager.src.main.java.org.example.annotations.Id;
+import org.example.persistence.annotations.*;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;

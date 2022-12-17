@@ -1,4 +1,4 @@
-package ORManager.src.main.java.org.example.annotations;
+package org.example.persistence.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
