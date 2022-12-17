@@ -1,4 +1,4 @@
-package src.main.java.org.example.annotations;
+package org.example.persistence.annotations;
 
 import java.lang.annotation.*;
 

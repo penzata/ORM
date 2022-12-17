@@ -1,4 +1,4 @@
-package src.main.java.org.example.annotations;
+package org.example.persistence.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -6,8 +6,10 @@ import java.lang.annotation.Target;
 
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
-@interface UniqueConstraint {
+@interface Index {
     String name() default "";
 
-    String[] columnNames();
+    String columnList();
+
+    boolean unique() default false;
 }
