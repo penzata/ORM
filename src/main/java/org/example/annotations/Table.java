@@ -19,19 +19,4 @@ public @interface Table {
     Index[] indexes() default {};
 
 }
-@Target({})
-@Retention(RetentionPolicy.RUNTIME)
- @interface Index {
-    String name() default "";
 
-    String columnList();
-
-    boolean unique() default false;
-}
-@Target({})
-@Retention(RetentionPolicy.RUNTIME)
- @interface UniqueConstraint {
-    String name() default "";
-
-    String[] columnNames();
-}
