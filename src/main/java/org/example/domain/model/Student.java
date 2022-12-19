@@ -1,4 +1,4 @@
-package org.example.business.model;
+package org.example.domain.model;
 
 import lombok.Getter;
 import lombok.Setter;
