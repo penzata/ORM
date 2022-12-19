@@ -25,13 +25,12 @@ public class Utils {
 
     public static Properties readProperties(Path file) {
         Properties result = new Properties();
-        try {
-            InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream(file.toString());
+
+        try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream(file.toString())) {
             result.load(inputStream);
             return result;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 }
