@@ -3,9 +3,15 @@ package org.example.persistence.ormanager;
 import org.example.persistence.annotations.*;
 
 import javax.sql.DataSource;
+import java.nio.file.Path;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
+
+import static org.example.persistence.utilities.Utils.readProperties;
 
 public interface ORManager {
     // let it work with ids:
@@ -25,12 +31,22 @@ public interface ORManager {
     // - BigDecimal                       (OPTIONAL)
     // - Enum +                           (OPTIONAL)
     //   @Enumerated(EnumType.ORDINAL/EnumType.STRING)
-    static ORManager withPropertiesFrom(String filename) {
-        return null; // todo
+    static ORManager withPropertiesFrom(String filename) throws SQLException {
+        Path path = Path.of(filename);
+
+        Properties properties = readProperties(path);
+
+
+        String jdbcUrl = properties.getProperty("jdbc-url");
+        String jdbcUser = properties.getProperty("jdbc-user");
+        String jdbcPass= properties.getProperty("jdbc-pass");
+
+        return new ORManagerImpl(ORManagerImpl.createDataSource(jdbcUrl,jdbcUser,jdbcPass, Map.of()));
+
     }
 
     // initialize connection factory for the DB based on the DataSource
     static ORManager withDataSource(DataSource dataSource) {
-        return null; // todo
+        return new ORManagerImpl(dataSource);
     }
 }
