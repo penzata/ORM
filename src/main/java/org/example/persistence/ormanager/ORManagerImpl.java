@@ -5,10 +5,7 @@ import org.example.domain.model.Student;
 
 import javax.sql.DataSource;
 import javax.xml.crypto.Data;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Map;
 
 public class ORManagerImpl implements org.example.persistence.ormanager.ORManager {
@@ -36,7 +33,10 @@ public class ORManagerImpl implements org.example.persistence.ormanager.ORManage
         Connection connection;
         try {
            connection = dataSource.getConnection();
-           PreparedStatement ps =  connection.prepareStatement("INSERT INTO students (first_name) values(?)");
+            Statement statement = connection.createStatement();
+            statement.execute("CREATE TABLE IF NOT EXISTS STUDENTS (first_name VARCHAR(255)) ;");
+            System.out.println("table created");
+           PreparedStatement ps =  connection.prepareStatement("INSERT INTO STUDENTS (first_name) values(?)");
            ps.setString(1, student.getFirstName());
            int rows = ps.executeUpdate();
             System.out.println(rows + " rows affected.");
@@ -44,5 +44,6 @@ public class ORManagerImpl implements org.example.persistence.ormanager.ORManage
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        return student;
     }
 }

@@ -1,5 +1,6 @@
 package org.example.demo;
 
+import org.example.domain.model.Student;
 import org.example.persistence.ormanager.ORManager;
 
 import java.sql.SQLException;
@@ -9,6 +10,7 @@ public class Main {
         String path = "db/properties/h2.properties";
 
         ORManager orManager = ORManager.withPropertiesFrom(path);
+        orManager.save(new Student("Ivan"));
 
     }
 }
