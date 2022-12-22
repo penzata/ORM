@@ -1,14 +1,17 @@
 package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.example.domain.model.Student;
 
 import javax.sql.DataSource;
+import javax.xml.crypto.Data;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
 
-public class ORManagerImpl implements ORManager{
+public class ORManagerImpl implements org.example.persistence.ormanager.ORManager {
 
     private DataSource dataSource;
 
@@ -27,5 +30,19 @@ public class ORManagerImpl implements ORManager{
 
         System.out.println(connection.isValid(1000));
         return dataSource;
+    }
+    @Override
+    public Student save(Student student){
+        Connection connection;
+        try {
+           connection = dataSource.getConnection();
+           PreparedStatement ps =  connection.prepareStatement("INSERT INTO students (first_name) values(?)");
+           ps.setString(1, student.getFirstName());
+           int rows = ps.executeUpdate();
+            System.out.println(rows + " rows affected.");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
