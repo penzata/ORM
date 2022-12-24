@@ -150,3 +150,19 @@ java.sql.SQLClientInfoException: Client info name 'ApplicationName' not supporte
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
 	at java.base/java.lang.Thread.run(Thread.java:833)
+2022-12-24 03:17:59 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "STUDENTS" not found (this database is empty); SQL statement:
+INSERT INTO STUDENTS (first_name) values(?)
+ [42104-214]
+2022-12-24 03:19:13 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "STUDENTS" not found (this database is empty); SQL statement:
+INSERT INTO STUDENTS (first_name) values(?)
+ [42104-214]
+2022-12-24 03:19:28 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "STUDENTS" not found (this database is empty); SQL statement:
+INSERT INTO STUDENTS (first_name) values(?)
+ [42104-214]
+2022-12-24 03:32:45 jdbc[4]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "STUDENTS" not found (this database is empty); SQL statement:
+INSERT INTO STUDENTS (first_name) values(?)
+ [42104-214]

@@ -15,6 +15,15 @@ import java.util.logging.Logger;
 public class ORManagerImpl implements ORManager {
     private static final Logger logger = Logger.getLogger(ORManagerImpl.class.getName());
     private DataSource dataSource;
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
     private Connection connection;
     private Statement statement;
     private PreparedStatement ps;
@@ -44,19 +53,18 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public void register(Class... entityClasses) {
-        
+
     }
 
     @Override
-    public <Student> Student save(Student student) {
+    public <T> T save(T o) {
         try {
-            if(student instanceof org.example.domain.model.Student st) {
-                connection = dataSource.getConnection();
-                statement = connection.createStatement();
+            if(o instanceof Student student) {
+                setConnection(dataSource.getConnection());
+                statement= getConnection().createStatement();
                 statement.execute(SQL_CREATE_TABLE);
-                logger.log(Level.INFO, "table created");
                 ps = connection.prepareStatement(SQL_INSERT_STUDENT);
-                ps.setString(1, st.getFirstName());
+                ps.setString(1, student.getFirstName());
                 int rows = ps.executeUpdate();
                 logger.log(Level.INFO, rows + " rows affected");
             }
@@ -64,8 +72,9 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return student;
+        return o;
     }
+
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
