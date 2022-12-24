@@ -2,6 +2,7 @@ package org.example.persistence.ormanager;
 
 import org.example.domain.model.Student;
 import org.example.persistence.annotations.*;
+import org.example.persistence.utilities.Utils;
 
 import javax.sql.DataSource;
 import java.nio.file.Path;
@@ -50,6 +51,5 @@ public interface ORManager {
     static ORManager withDataSource(DataSource dataSource) {
         return new ORManagerImpl(dataSource);
     }
-    Student save(Student student);
-
+     <T> T save(T student);
 }
