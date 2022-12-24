@@ -4,8 +4,11 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.example.domain.model.Student;
 
 import javax.sql.DataSource;
+import java.io.Serializable;
 import java.sql.*;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +43,11 @@ public class ORManagerImpl implements ORManager {
     }
 
     @Override
+    public void register(Class... entityClasses) {
+        
+    }
+
+    @Override
     public <Student> Student save(Student student) {
         try {
             if(student instanceof org.example.domain.model.Student st) {
@@ -57,5 +65,30 @@ public class ORManagerImpl implements ORManager {
             e.printStackTrace();
         }
         return student;
+    }
+
+    @Override
+    public <T> Optional<T> findById(Serializable id, Class<T> cls) {
+        return Optional.empty();
+    }
+
+    @Override
+    public <T> List<T> findAll(Class<T> cls) {
+        return null;
+    }
+
+    @Override
+    public <T> T update(T o) {
+        return null;
+    }
+
+    @Override
+    public <T> T refresh(T o) {
+        return null;
+    }
+
+    @Override
+    public boolean delete(Object o) {
+        return false;
     }
 }
