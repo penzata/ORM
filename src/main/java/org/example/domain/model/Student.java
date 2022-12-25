@@ -1,22 +1,20 @@
 package org.example.domain.model;
 
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.Data;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 
-@Getter @Setter
+@Data
 @Entity
 @Table(name = "students")
-public class Student{
+public class Student {
 
     @Id
     @Column(name = "id")
     private Long id;
-    @Column(name = "first_name",nullable = false)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
     public Student(String firstName) {
@@ -26,11 +24,4 @@ public class Student{
     private Student() {
     }
 
-    @Override
-    public String toString() {
-        return "Student{" +
-                "id=" + id +
-                ", name='" + firstName + '\'' +
-                '}';
-    }
 }
