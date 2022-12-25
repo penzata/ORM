@@ -8,6 +8,7 @@ import org.example.persistence.annotations.Id;
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -25,9 +26,11 @@ public class ORManagerImpl implements ORManager {
             """;
 
     private static final String ID = " BIGINT PRIMARY KEY AUTO_INCREMENT";
-    private static final String NAME = " VARCHAR(255) UNIQUE NOT NULL";
-    private static final String DATE = " DATE NOT NULL";
-    private static final String INT = " INT NOT NULL";
+    private static final String NAME = " VARCHAR(255) UNIQUE ";
+    private static final String DATETIME = " DATETIME ";
+    private static final String INT = " INT ";
+    private static final String BOOLEAN = " BOOLEAN ";
+    private static final String NOT_NULL = "NOT NULL ";
 
     private DataSource dataSource;
 
@@ -38,7 +41,6 @@ public class ORManagerImpl implements ORManager {
     @Override
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
-
             if (cls.isAnnotationPresent(Entity.class)) {
                 String tableName = getTableName(cls);
 
@@ -49,13 +51,18 @@ public class ORManagerImpl implements ORManager {
                     Class<?> fieldType = field.getType();
                     if (field.isAnnotationPresent(Id.class)) {
                         String name = field.getName();
-                        getColumnName(sql, fieldType, name);
+                        setColumnName(sql, fieldType, name);
                     } else if (field.isAnnotationPresent(Column.class)) {
-                        String name = getFieldName(field);
-                        getColumnName(sql, fieldType, name);
+                        Column columnAnn = field.getAnnotation(Column.class);
+                        if (columnAnn.nullable()) {//can be null
+                            String name = getFieldName(field);
+                            setColumnName(sql, fieldType, name);
+                        } else {//not null
+                            String name = getFieldName(field);
+                            setColumnNameNotNull(sql, fieldType, name);
+                        }
                     }
                 }
-
                 String sqlCreateTable = String.format("%s %s(%s);", CREATE_TABLE, tableName,
                         String.join(", ", sql));
 
@@ -66,27 +73,6 @@ public class ORManagerImpl implements ORManager {
                 }
             }
         }
-    }
-
-    private void getColumnName(ArrayList<String> sql, Class<?> type, String name) {
-        if (type == Long.class) {
-            sql.add(name + ID);
-        }
-        if (type == String.class) {
-            sql.add(name + NAME);
-        } else if (type == LocalDate.class) {
-            sql.add(name + DATE);
-        } else if (type == int.class) {
-            sql.add(name + INT);
-        }
-    }
-
-    private String getFieldName(Field field) {
-        String name = field.getAnnotation(Column.class).name();
-        if (name.equals("")) {
-            name = field.getName();
-        }
-        return name;
     }
 
     @Override
@@ -115,6 +101,12 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
+        try {
+            Connection connection = dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         return Optional.empty();
     }
 
@@ -136,5 +128,39 @@ public class ORManagerImpl implements ORManager {
     @Override
     public boolean delete(Object o) {
         return false;
+    }
+    private void setColumnName(ArrayList<String> sql, Class<?> type, String name) {
+        if (type == Long.class) {
+            sql.add(name + ID);
+        }
+        if (type == String.class) {
+            sql.add(name + NAME);
+        } else if (type == LocalDate.class) {
+            sql.add(name + DATETIME);
+        } else if (type == int.class) {
+            sql.add(name + INT);
+        }
+    }
+
+    private void setColumnNameNotNull(ArrayList<String> sql, Class<?> type, String name) {
+        if (type == Long.class) {
+            sql.add(name + ID);
+        }
+        if (type == String.class) {
+            sql.add(name + NAME + NOT_NULL);
+        } else if (type == LocalDate.class) {
+            sql.add(name + DATETIME + NOT_NULL);
+        } else if (type == int.class) {
+            sql.add(name + INT + NOT_NULL);
+        }
+    }
+
+
+    private String getFieldName(Field field) {
+        String name = field.getAnnotation(Column.class).name();
+        if (name.equals("")) {
+            name = field.getName();
+        }
+        return name;
     }
 }

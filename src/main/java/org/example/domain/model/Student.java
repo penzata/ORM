@@ -1,6 +1,7 @@
 package org.example.domain.model;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
@@ -15,7 +16,7 @@ public class Student{
     @Id
     @Column(name = "id")
     private Long id;
-    @Column(name = "first_name")
+    @Column(name = "first_name",nullable = false)
     private String firstName;
 
 
