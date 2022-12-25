@@ -3,6 +3,7 @@ package org.example.persistence.utilities;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Table;
+import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
@@ -45,16 +46,16 @@ public class AnnotationUtils {
                         (canBeNull ? "" : "NOT NULL");
 
         if (type == Long.class) {
-            sql.add(name + ID);
+            sql.add(name + SQLDialect.ID);
         }
         if (type == String.class) {
-            sql.add(name + NAME + constraints);
+            sql.add(name + SQLDialect.NAME + constraints);
         } else if (type == LocalDate.class) {
-            sql.add(name + DATETIME + constraints);
+            sql.add(name + SQLDialect.DATETIME + constraints);
         } else if (type == int.class) {
-            sql.add(name + INT + constraints);
+            sql.add(name + SQLDialect.INT + constraints);
         } else if (type == boolean.class) {
-            sql.add(name + BOOLEAN + constraints);
+            sql.add(name + SQLDialect.BOOLEAN + constraints);
         }
     }
 }
