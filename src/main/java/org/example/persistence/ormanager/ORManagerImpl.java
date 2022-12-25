@@ -44,7 +44,7 @@ public class ORManagerImpl implements ORManager {
         dataSource.setPassword(password);
         Connection connection = DriverManager.getConnection(url, user, password);
         connection.setAutoCommit(true);
-        logger.info("Connection valid: " + connection.isValid(1000));
+        log.info("Connection valid: " + connection.isValid(1000));
         return dataSource;
     }
 
