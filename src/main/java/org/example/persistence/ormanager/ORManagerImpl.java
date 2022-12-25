@@ -22,7 +22,7 @@ import static org.example.persistence.utilities.Utils.getTableName;
 public class ORManagerImpl implements ORManager {
     private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
     private static final String SQL_INSERT_STUDENT = """
-            INSERT INTO STUDENTS (first_name) values(?)
+            INSERT INTO STUDENTS (first_name) values(?);
             """;
     private static final String SQL_FIND_ALL = """
             SELECT * FROM
@@ -33,7 +33,6 @@ public class ORManagerImpl implements ORManager {
     private static final String DATETIME = " DATETIME ";
     private static final String INT = " INT ";
     private static final String BOOLEAN = " BOOLEAN ";
-    private static final String NOT_NULL = "NOT NULL ";
 
     private DataSource dataSource;
 
@@ -54,19 +53,10 @@ public class ORManagerImpl implements ORManager {
                     Class<?> fieldType = field.getType();
                     if (field.isAnnotationPresent(Id.class)) {
                         String name = field.getName();
-                        setColumnName(sql, fieldType, name);
+                        setColumnName(sql, fieldType, name, true, false);
                     } else if (field.isAnnotationPresent(Column.class)) {
-                        Column columnAnn = field.getAnnotation(Column.class);
                         String name = getFieldName(field);
-                        if (columnAnn.nullable()) {//can be null
-                            if (columnAnn.unique()) {
-                                setColumnName(sql, fieldType, name + " NOT NULL");
-                            } else {
-                                setColumnName(sql, fieldType, name);
-                            }
-                        } else {//not null
-                            setColumnNameNotNull(sql, fieldType, name);
-                        }
+                        setColumnName(sql, fieldType, name, isUnique(field), canBeNull(field));
                     }
                 }
                 String sqlCreateTable = String.format("%s %s(%s);", CREATE_TABLE, tableName,
@@ -152,29 +142,22 @@ public class ORManagerImpl implements ORManager {
         return false;
     }
 
-    private void setColumnName(ArrayList<String> sql, Class<?> type, String name) {
-        if (type == Long.class) {
-            sql.add(name + ID);
-        }
-        if (type == String.class) {
-            sql.add(name + NAME);
-        } else if (type == LocalDate.class) {
-            sql.add(name + DATETIME);
-        } else if (type == int.class) {
-            sql.add(name + INT);
-        }
-    }
+    private void setColumnName(ArrayList<String> sql, Class<?> type, String name, boolean isUnique, boolean canBeNull) {
+        String constraints =
+                (isUnique ? " UNIQUE " : "") +
+                (canBeNull ? "" : "NOT NULL");
 
-    private void setColumnNameNotNull(ArrayList<String> sql, Class<?> type, String name) {
         if (type == Long.class) {
             sql.add(name + ID);
         }
         if (type == String.class) {
-            sql.add(name + NAME + NOT_NULL);
+            sql.add(name + NAME + constraints);
         } else if (type == LocalDate.class) {
-            sql.add(name + DATETIME + NOT_NULL);
+            sql.add(name + DATETIME + constraints);
         } else if (type == int.class) {
-            sql.add(name + INT + NOT_NULL);
+            sql.add(name + INT + constraints);
+        } else if (type == boolean.class) {
+            sql.add(name + BOOLEAN + constraints);
         }
     }
 
@@ -185,5 +168,13 @@ public class ORManagerImpl implements ORManager {
             name = field.getName();
         }
         return name;
+    }
+
+    private boolean isUnique(Field field) {
+        return field.getAnnotation(Column.class).unique();
+    }
+
+    private boolean canBeNull(Field field) {
+        return field.getAnnotation(Column.class).nullable();
     }
 }
