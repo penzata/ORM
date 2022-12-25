@@ -24,9 +24,12 @@ public class ORManagerImpl implements ORManager {
     private static final String SQL_INSERT_STUDENT = """
             INSERT INTO STUDENTS (first_name) values(?)
             """;
+    private static final String SQL_FIND_ALL = """
+            SELECT * FROM
+            """;
 
     private static final String ID = " BIGINT PRIMARY KEY AUTO_INCREMENT";
-    private static final String NAME = " VARCHAR(255) UNIQUE ";
+    private static final String NAME = " VARCHAR(255) ";
     private static final String DATETIME = " DATETIME ";
     private static final String INT = " INT ";
     private static final String BOOLEAN = " BOOLEAN ";
@@ -54,11 +57,14 @@ public class ORManagerImpl implements ORManager {
                         setColumnName(sql, fieldType, name);
                     } else if (field.isAnnotationPresent(Column.class)) {
                         Column columnAnn = field.getAnnotation(Column.class);
+                        String name = getFieldName(field);
                         if (columnAnn.nullable()) {//can be null
-                            String name = getFieldName(field);
-                            setColumnName(sql, fieldType, name);
+                            if (columnAnn.unique()) {
+                                setColumnName(sql, fieldType, name + " NOT NULL");
+                            } else {
+                                setColumnName(sql, fieldType, name);
+                            }
                         } else {//not null
-                            String name = getFieldName(field);
                             setColumnNameNotNull(sql, fieldType, name);
                         }
                     }
@@ -112,7 +118,24 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
-        return null;
+        List<String> records = new ArrayList<>();
+        try {
+            Connection connection = dataSource.getConnection();
+            Statement st = connection.createStatement();
+            ResultSet rs = st.executeQuery(SQL_FIND_ALL + getTableName(cls));
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            int columns = rsMetaData.getColumnCount();
+            while (rs.next()) {
+                for (int i = 1; i <= columns; i++) {
+                    records.add(rsMetaData.getColumnName(i) + ": " + rs.getString(rsMetaData.getColumnName(i)));
+                }
+            }
+            log.info(records.toString());
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return (List<T>) records;
     }
 
     @Override
@@ -129,6 +152,7 @@ public class ORManagerImpl implements ORManager {
     public boolean delete(Object o) {
         return false;
     }
+
     private void setColumnName(ArrayList<String> sql, Class<?> type, String name) {
         if (type == Long.class) {
             sql.add(name + ID);
