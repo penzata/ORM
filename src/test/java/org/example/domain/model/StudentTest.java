@@ -63,4 +63,5 @@ class StudentTest {
         log.atDebug().log("student1: {}", st1);
         log.atDebug().log("student2: {}", st2);
     }
+
 }
