@@ -118,11 +118,11 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
-        List<String> records = new ArrayList<>();
+        List<Object> records = new ArrayList<>();
         try {
             Connection connection = dataSource.getConnection();
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(SQL_FIND_ALL + getTableName(cls));
+            PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
+            ResultSet rs = st.executeQuery();
             ResultSetMetaData rsMetaData = rs.getMetaData();
             int columns = rsMetaData.getColumnCount();
             while (rs.next()) {
@@ -131,7 +131,6 @@ public class ORManagerImpl implements ORManager {
                 }
             }
             log.info(records.toString());
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
