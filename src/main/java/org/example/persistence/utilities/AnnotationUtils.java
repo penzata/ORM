@@ -16,8 +16,12 @@ public class AnnotationUtils {
     }
 
     public static String getTableName(Class<?> clss) {
-        String tableName = clss.getAnnotation(Table.class).name();
-        return tableName.equals("") ? (clss.getSimpleName() + "s") : tableName;
+        if (clss.isAnnotationPresent(Table.class)) {
+            String tableName = clss.getAnnotation(Table.class).name();
+            return tableName.equals("") ? (clss.getSimpleName() + "s") : tableName;
+        } else {
+            return clss.getSimpleName() + "s";
+        }
     }
 
     public static String getFieldName(Field field) {
