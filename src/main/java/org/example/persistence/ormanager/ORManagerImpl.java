@@ -1,6 +1,5 @@
 package org.example.persistence.ormanager;
 
-import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
@@ -14,7 +13,6 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.example.persistence.utilities.Utils.getConnection;
@@ -38,18 +36,6 @@ public class ORManagerImpl implements ORManager {
 
     public ORManagerImpl(DataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-
-    static DataSource createDataSource(String url, String user, String password, Map<String, String> props) throws SQLException {
-        var dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(url);
-        dataSource.setUsername(user);
-        dataSource.setPassword(password);
-        Connection connection = DriverManager.getConnection(url, user, password);
-        connection.setAutoCommit(true);
-        log.info("Connection valid: " + connection.isValid(1000));
-        return dataSource;
     }
 
     @Override
@@ -88,7 +74,6 @@ public class ORManagerImpl implements ORManager {
             }
         }
     }
-
 
     @Override
     public <T> T save(T o) {
@@ -144,7 +129,6 @@ public class ORManagerImpl implements ORManager {
     public boolean delete(Object o) {
         return false;
     }
-
     private void setColumnName(ArrayList<String> sql, Class<?> type, String name) {
         if (type == Long.class) {
             sql.add(name + ID);
