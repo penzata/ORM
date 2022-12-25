@@ -6,7 +6,7 @@ public class SQLDialect {
             INSERT INTO STUDENTS (first_name) values(?);
             """;
 
-    public static final String ID = " BIGINT PRIMARY KEY AUTO_INCREMENT";
+    public static final String ID = " BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
     public static final String NAME = " VARCHAR(255) ";
     public static final String DATETIME = " DATETIME ";
     public static final String INT = " INT ";
