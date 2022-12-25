@@ -1,14 +1,11 @@
 package org.example.persistence.ormanager;
 
-import com.zaxxer.hikari.HikariDataSource;
-
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Map;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
 
-public class ORManagerImpl implements ORManager{
+public class ORManagerImpl implements ORManager {
 
     private DataSource dataSource;
 
@@ -16,16 +13,39 @@ public class ORManagerImpl implements ORManager{
         this.dataSource = dataSource;
     }
 
+    @Override
+    public void register(Class... entityClasses) {
 
-    static DataSource createDataSource(String url, String user, String password, Map<String, String> props) throws SQLException {
-        var dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(url);
-        dataSource.setUsername(user);
-        dataSource.setPassword(password);
-        Connection connection = DriverManager.getConnection(url,user,password);
-        connection.setAutoCommit(true);
-
-        System.out.println(connection.isValid(1000));
-        return dataSource;
     }
+
+    @Override
+    public <T> T save(T o) {
+        return null;
+    }
+
+    @Override
+    public <T> Optional<T> findById(Serializable id, Class<T> cls) {
+        return Optional.empty();
+    }
+
+    @Override
+    public <T> List<T> findAll(Class<T> cls) {
+        return null;
+    }
+
+    @Override
+    public <T> T update(T o) {
+        return null;
+    }
+
+    @Override
+    public <T> T refresh(T o) {
+        return null;
+    }
+
+    @Override
+    public boolean delete(Object o) {
+        return false;
+    }
+
 }

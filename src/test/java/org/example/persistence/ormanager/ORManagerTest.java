@@ -5,6 +5,7 @@ import org.assertj.db.type.Source;
 import org.assertj.db.type.Table;
 import org.assertj.db.type.ValueType;
 import org.example.domain.model.Student;
+import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -24,9 +24,10 @@ import static org.assertj.db.output.Outputs.output;
 @Slf4j
 @ExtendWith(MockitoExtension.class)
 class ORManagerTest {
+    private static final String DATABASE_PATH = "h2.properties";
     //language=H2
     private static final String STUDENTS_TABLE = """
-            CREATE TABLE students
+            CREATE TABLE IF NOT EXISTS students
             (
             id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             first_name VARCHAR(30) NOT NULL
@@ -39,34 +40,32 @@ class ORManagerTest {
     static Source source;
     static Table table;
     static Student student;
-    static Path path;
+    static ORManager ormManager;
 
     @BeforeAll
     static void setUp() throws SQLException {
-        conn = org.example.persistence.ormanager.DataSource.getConnection();
+        ormManager = Utils.withPropertiesFrom(DATABASE_PATH);
+        conn = Utils.getConnection();
+        log.atDebug().log("is the connection valid: {}", conn.isValid(1000));
         conn.prepareStatement(STUDENTS_TABLE).execute();
 
-        source = new Source("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "", "");
+        source = new Source("jdbc:h2:mem:test", "", "");
         student = new Student("Bob");
-        path = Path.of("db/properties/h2.properties");
     }
 
     @AfterAll
     static void close() throws SQLException {
-        conn.close();
+        if (conn != null) {
+            conn.close();
+        }
         if (stmt != null) {
             stmt.close();
         }
     }
 
     @Test
-    void DoesFileExist() {
-        assertThat(path).exists();
-    }
-
-    @Test
     @DisplayName("try saving to database")
-    void save() throws SQLException {
+    void SaveToDBAndSeeTheResultWithOutputToConsole() throws SQLException {
         stmt = conn.prepareStatement(SQL_ADD_ONE);
         Student st2 = new Student("Ani");
         Student st3 = new Student("Dale");
@@ -98,7 +97,7 @@ class ORManagerTest {
     }
 
     @Test
-    void CheckIfIdIsSet() {
+    void CheckIfIdIsNull() {
         assertThat(student.getId()).as("User \"%s\" has no ID set yet", student.getFirstName()).isNull();
     }
 
