@@ -3,6 +3,7 @@ package org.example.persistence.utilities;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.persistence.annotations.Table;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.ormanager.ORManagerImpl;
 
@@ -25,7 +26,7 @@ public class Utils {
         Path path = Path.of(filename);
         Properties properties = readProperties(path);
 
-        String jdbcUrl = properties.getProperty("jdbc-mem-url");
+        String jdbcUrl = properties.getProperty("jdbc-url");
         String jdbcUser = properties.getProperty("jdbc-username", "");
         String jdbcPass = properties.getProperty("jdbc-pass", "");
 
@@ -67,6 +68,17 @@ public class Utils {
             log.error("Need to initialize ORManager first to set the data source.");
         }
         return null;
+    }
+
+    public static String getTableName(Class<?> cls) {
+        Table annotation = cls.getAnnotation(Table.class);
+        if (annotation != null) {
+            String name = annotation.name();
+            if (!name.equals("")) {
+                return name;
+            }
+        }
+        return cls.getSimpleName();
     }
 
     public static ORManager withDataSource(DataSource dataSource) {
