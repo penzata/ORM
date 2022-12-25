@@ -4,32 +4,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
-
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.example.persistence.utilities.Utils.getConnection;
-import static org.example.persistence.utilities.Utils.getTableName;
+import static org.example.persistence.sql.SQLDialect.*;
+import static org.example.persistence.utilities.Utils.*;
 
 @Slf4j
 public class ORManagerImpl implements ORManager {
-    private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
-    private static final String SQL_INSERT_STUDENT = """
-            INSERT INTO STUDENTS (first_name) values(?);
-            """;
-
-    private static final String ID = " BIGINT PRIMARY KEY AUTO_INCREMENT";
-    private static final String NAME = " VARCHAR(255) ";
-    private static final String DATETIME = " DATETIME ";
-    private static final String INT = " INT ";
-    private static final String BOOLEAN = " BOOLEAN ";
 
     private DataSource dataSource;
 
@@ -54,12 +41,11 @@ public class ORManagerImpl implements ORManager {
                     } else if (field.isAnnotationPresent(Column.class)) {
                         String name = getFieldName(field);
                         setColumnName(sql, fieldType, name, isUnique(field), canBeNull(field));
-
                     }
                 }
-                String sqlCreateTable = String.format("%s %s(%s);", CREATE_TABLE, tableName,
-                        String.join(", ", sql));
-
+                String sqlCreateTable = String.format("%s %s\n(%s);", CREATE_TABLE, tableName,
+                        String.join(",\n", sql));
+                System.out.println(sqlCreateTable);
                 try (var prepStmt = getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
@@ -67,7 +53,6 @@ public class ORManagerImpl implements ORManager {
                 }
             }
         }
-
     }
 
     @Override
@@ -125,39 +110,4 @@ public class ORManagerImpl implements ORManager {
         return false;
     }
 
-    private void setColumnName(ArrayList<String> sql, Class<?> type, String name, boolean isUnique, boolean canBeNull) {
-        String constraints =
-                (isUnique ? " UNIQUE " : "") +
-                (canBeNull ? "" : "NOT NULL");
-
-        if (type == Long.class) {
-            sql.add(name + ID);
-        }
-        if (type == String.class) {
-            sql.add(name + NAME + constraints);
-        } else if (type == LocalDate.class) {
-            sql.add(name + DATETIME + constraints);
-        } else if (type == int.class) {
-            sql.add(name + INT + constraints);
-        } else if (type == boolean.class) {
-            sql.add(name + BOOLEAN + constraints);
-        }
-    }
-
-
-    private String getFieldName(Field field) {
-        String name = field.getAnnotation(Column.class).name();
-        if (name.equals("")) {
-            name = field.getName();
-        }
-        return name;
-    }
-
-    private boolean isUnique(Field field) {
-        return field.getAnnotation(Column.class).unique();
-    }
-
-    private boolean canBeNull(Field field) {
-        return field.getAnnotation(Column.class).nullable();
-    }
 }
