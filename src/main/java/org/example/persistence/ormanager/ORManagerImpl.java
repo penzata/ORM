@@ -5,6 +5,7 @@ import org.example.domain.model.Student;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.List;
 import java.util.Map;
@@ -15,21 +16,8 @@ import java.util.logging.Logger;
 public class ORManagerImpl implements ORManager {
     private static final Logger logger = Logger.getLogger(ORManagerImpl.class.getName());
     private DataSource dataSource;
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
-    }
-
-    public Connection getConnection() {
-        return connection;
-    }
-
-    private Connection connection;
-    private Statement statement;
-    private PreparedStatement ps;
-
     private static final String SQL_CREATE_TABLE = """
-            CREATE TABLE IF NOT EXISTS STUDENTS (first_name VARCHAR(255))
+            CREATE TABLE IF NOT EXISTS STUDENTS (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, first_name VARCHAR(255))
             """;
     private static final String SQL_INSERT_STUDENT = """
             INSERT INTO STUDENTS (first_name) values(?)
@@ -59,22 +47,33 @@ public class ORManagerImpl implements ORManager {
     @Override
     public <T> T save(T o) {
         try {
-            if(o instanceof Student student) {
-                setConnection(dataSource.getConnection());
-                statement= getConnection().createStatement();
-                statement.execute(SQL_CREATE_TABLE);
-                ps = connection.prepareStatement(SQL_INSERT_STUDENT);
-                ps.setString(1, student.getFirstName());
-                int rows = ps.executeUpdate();
-                logger.log(Level.INFO, rows + " rows affected");
+            Field[] declaredFields = o.getClass().getDeclaredFields();
+            for (Field declaredField : declaredFields) {
+                declaredField.setAccessible(true);
             }
+                Connection connection  = dataSource.getConnection();
+               Statement statement = connection.createStatement();
+                statement.execute(SQL_CREATE_TABLE);
+               PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, declaredFields[1].get(o).toString());
+                int rows = ps.executeUpdate();
+                ResultSet rs = ps.getGeneratedKeys();
+                var next = rs.next();
+                while(rs.next()){
+                    long id = rs.getLong(1);
+                    logger.info(declaredFields[1].toString());
+                    declaredFields[0].set(o,id);
+                    System.out.println(id);
+                }
+                logger.log(Level.INFO, rows + " rows affected");
+            System.out.println(o);
 
-        } catch (SQLException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return o;
     }
-
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
