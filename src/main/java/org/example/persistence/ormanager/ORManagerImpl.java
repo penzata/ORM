@@ -51,23 +51,16 @@ public class ORManagerImpl implements ORManager {
             for (Field declaredField : declaredFields) {
                 declaredField.setAccessible(true);
             }
-                Connection connection  = dataSource.getConnection();
-               Statement statement = connection.createStatement();
-                statement.execute(SQL_CREATE_TABLE);
-               PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS);
-                ps.setString(1, declaredFields[1].get(o).toString());
-                int rows = ps.executeUpdate();
-                ResultSet rs = ps.getGeneratedKeys();
-                var next = rs.next();
-                while(rs.next()){
-                    long id = rs.getLong(1);
-                    logger.info(declaredFields[1].toString());
-                    declaredFields[0].set(o,id);
-                    System.out.println(id);
-                }
-                logger.log(Level.INFO, rows + " rows affected");
-            System.out.println(o);
-
+            Connection connection = dataSource.getConnection();
+            PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, declaredFields[1].get(o).toString());
+            int rows = ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            while (rs.next()) {
+                logger.info(declaredFields[1].getName());
+                declaredFields[0].set(o, rs.getLong(1));
+            }
+            logger.log(Level.INFO, rows + " rows affected");
 
         } catch (Exception e) {
             e.printStackTrace();
