@@ -11,8 +11,8 @@ public class Main {
         String path = "h2.properties";
         ORManager orManager = Utils.withPropertiesFrom(path);
 
-
-        orManager.save(new Student("Ivan"));
         orManager.register(Student.class);
+        orManager.save(new Student("Ivan"));
+
     }
 }

@@ -10,7 +10,7 @@ import org.example.persistence.annotations.Table;
 @Getter @Setter
 @Entity
 @Table(name = "students")
-public class Student {
+public class Student{
 
     @Id
     @Column(name = "id")
