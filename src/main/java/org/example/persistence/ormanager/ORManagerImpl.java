@@ -1,27 +1,36 @@
 package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.example.domain.model.Student;
+import lombok.extern.slf4j.Slf4j;
+import org.example.persistence.annotations.Column;
+import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.Id;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static org.example.persistence.utilities.Utils.getConnection;
+import static org.example.persistence.utilities.Utils.getTableName;
 
+@Slf4j
 public class ORManagerImpl implements ORManager {
-    private static final Logger logger = Logger.getLogger(ORManagerImpl.class.getName());
-    private DataSource dataSource;
-    private static final String SQL_CREATE_TABLE = """
-            CREATE TABLE IF NOT EXISTS STUDENTS (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, first_name VARCHAR(255))
-            """;
+    private static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
     private static final String SQL_INSERT_STUDENT = """
             INSERT INTO STUDENTS (first_name) values(?)
             """;
+
+    private static final String ID = " BIGINT PRIMARY KEY AUTO_INCREMENT";
+    private static final String NAME = " VARCHAR(255) UNIQUE NOT NULL";
+    private static final String DATE = " DATE NOT NULL";
+    private static final String INT = " INT NOT NULL";
+
+    private DataSource dataSource;
 
     public ORManagerImpl(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -41,8 +50,37 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public void register(Class... entityClasses) {
+        for (Class<?> cls : entityClasses) {
 
+            if (cls.isAnnotationPresent(Entity.class)) {
+                String tableName = getTableName(cls);
+
+                Field[] declaredFields = cls.getDeclaredFields();
+                ArrayList<String> sql = new ArrayList<>();
+
+                for (Field field : declaredFields) {
+                    Class<?> fieldType = field.getType();
+                    if (field.isAnnotationPresent(Id.class)) {
+                        String name = field.getName();
+                        getColumnName(sql, fieldType, name);
+                    } else if (field.isAnnotationPresent(Column.class)) {
+                        String name = getFieldName(field);
+                        getColumnName(sql, fieldType, name);
+                    }
+                }
+
+                String sqlCreateTable = String.format("%s %s(%s);", CREATE_TABLE, tableName,
+                        String.join(", ", sql));
+
+                try (var prepStmt = getConnection().prepareStatement(sqlCreateTable)) {
+                    prepStmt.executeUpdate();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
+
 
     @Override
     public <T> T save(T o) {
@@ -57,10 +95,10 @@ public class ORManagerImpl implements ORManager {
             int rows = ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
-                logger.info(declaredFields[1].getName());
+                log.info(declaredFields[1].getName());
                 declaredFields[0].set(o, rs.getLong(1));
             }
-            logger.log(Level.INFO, rows + " rows affected");
+            log.info(rows + " rows affected");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -91,5 +129,26 @@ public class ORManagerImpl implements ORManager {
     @Override
     public boolean delete(Object o) {
         return false;
+    }
+
+    private void getColumnName(ArrayList<String> sql, Class<?> type, String name) {
+        if (type == Long.class) {
+            sql.add(name + ID);
+        }
+        if (type == String.class) {
+            sql.add(name + NAME);
+        } else if (type == LocalDate.class) {
+            sql.add(name + DATE);
+        } else if (type == int.class) {
+            sql.add(name + INT);
+        }
+    }
+
+    private String getFieldName(Field field) {
+        String name = field.getAnnotation(Column.class).name();
+        if (name.equals("")) {
+            name = field.getName();
+        }
+        return name;
     }
 }
