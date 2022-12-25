@@ -49,7 +49,7 @@ class ORManagerTest {
         log.atDebug().log("is the connection valid: {}", conn.isValid(1000));
         conn.prepareStatement(STUDENTS_TABLE).execute();
 
-        source = new Source("jdbc:h2:mem:test", "", "");
+        source = new Source("jdbc:h2:file:./src/database/testDB", "", "");
         student = new Student("Bob");
     }
 
@@ -106,7 +106,7 @@ class ORManagerTest {
         Student student2 = new Student("Bob");
 
         assertThat(student).usingRecursiveComparison().isEqualTo(student2);
-        assertThat(student).isNotEqualTo(student2);
+        assertThat(student).isEqualTo(student2);
     }
 
 }
