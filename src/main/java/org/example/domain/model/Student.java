@@ -21,7 +21,7 @@ public class Student {
         this.firstName = firstName;
     }
 
-    private Student() {
+    Student() {
     }
 
 }
