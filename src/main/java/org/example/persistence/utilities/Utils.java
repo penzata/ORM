@@ -3,7 +3,6 @@ package org.example.persistence.utilities;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Table;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.ormanager.ORManagerImpl;
@@ -11,15 +10,10 @@ import org.example.persistence.ormanager.ORManagerImpl;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Properties;
-
-import static org.example.persistence.sql.SQLDialect.*;
 
 @Slf4j
 public class Utils {
@@ -74,51 +68,6 @@ public class Utils {
             log.error("Need to initialize ORManager first to set the data source.");
         }
         return null;
-    }
-
-    public static String getTableName(Class<?> cls) {
-        Table annotation = cls.getAnnotation(Table.class);
-        if (annotation != null) {
-            String name = annotation.name();
-            if (!name.equals("")) {
-                return name;
-            }
-        }
-        return cls.getSimpleName();
-    }
-    public static String getFieldName(Field field) {
-        String name = field.getAnnotation(Column.class).name();
-        if (name.equals("")) {
-            name = field.getName();
-        }
-        return name;
-    }
-
-    public static boolean isUnique(Field field) {
-        return field.getAnnotation(Column.class).unique();
-    }
-
-    public static boolean canBeNull(Field field) {
-        return field.getAnnotation(Column.class).nullable();
-    }
-
-    public static void setColumnName(ArrayList<String> sql, Class<?> type, String name, boolean isUnique, boolean canBeNull) {
-        String constraints =
-                (isUnique ? " UNIQUE " : "") +
-                        (canBeNull ? "" : "NOT NULL");
-
-        if (type == Long.class) {
-            sql.add(name + ID);
-        }
-        if (type == String.class) {
-            sql.add(name + NAME + constraints);
-        } else if (type == LocalDate.class) {
-            sql.add(name + DATETIME + constraints);
-        } else if (type == int.class) {
-            sql.add(name + INT + constraints);
-        } else if (type == boolean.class) {
-            sql.add(name + BOOLEAN + constraints);
-        }
     }
 
     public static ORManager withDataSource(DataSource dataSource) {
