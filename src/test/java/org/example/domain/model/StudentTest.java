@@ -25,7 +25,7 @@ class StudentTest {
 
     @Test
     @DisplayName("checking if Lombok getters & setters work correct")
-    void GettersAndSettersCheck() {
+    void LombokGettersAndSettersCheck() {
         assertEquals("Bob", st1.getFirstName());
         assertNull(st1.getId());
 
@@ -40,7 +40,7 @@ class StudentTest {
 
     @Test
     @DisplayName("checking if Lombok equals and hashcode methods work correct")
-    void EqualsAndHashCodeCheck() {
+    void LombokEqualsAndHashCodeCheck() {
         boolean initialResult = st1.hashCode() == st2.hashCode();
         log.atDebug().log("st1's hashcode: {}\nst2's hashcode: {}", st1.hashCode(), st2.hashCode());
         assertFalse(initialResult);
@@ -59,9 +59,15 @@ class StudentTest {
     }
 
     @Test
-    void toStringMethodCheck() {
+    void LombokToStringMethodCheck() {
         log.atDebug().log("student1: {}", st1);
         log.atDebug().log("student2: {}", st2);
+
+        assertNotEquals(st1.toString(), st2.toString());
+
+        st2.setFirstName("Bob");
+
+        assertEquals(st1.toString(), st2.toString());
     }
 
 }
