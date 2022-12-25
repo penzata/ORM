@@ -19,7 +19,6 @@ public class Student{
     @Column(name = "first_name",nullable = false)
     private String firstName;
 
-
     public Student(String firstName) {
         this.firstName = firstName;
     }
