@@ -3,7 +3,6 @@ package org.example.persistence.utilities;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Table;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.ormanager.ORManagerImpl;
 
