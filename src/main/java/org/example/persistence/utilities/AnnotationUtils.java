@@ -28,8 +28,17 @@ public class AnnotationUtils {
     }
 
     public static String getFieldName(Field field) {
-        String fieldName = field.getAnnotation(Column.class).name();
-        return fieldName.equals("") ? field.getName() : fieldName;
+        if (field.isAnnotationPresent(Column.class)) {
+            String fieldName = field.getAnnotation(Column.class).name();
+            return fieldName.equals("") ? field.getName() : fieldName;
+        } else {
+            return field.getName();
+        }
+    }
+
+    public static FieldInfo getIdField(Class<?> clss) {
+
+        return null;
     }
 
     public static boolean isUnique(Field field) {
