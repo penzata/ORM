@@ -1,9 +1,9 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.annotations.Id;
+import org.example.persistence.utilities.AnnotationUtils;
+
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.Utils.*;
+import static org.example.persistence.sql.SQLDialect.CREATE_TABLE;
+import static org.example.persistence.sql.SQLDialect.SQL_INSERT_STUDENT;
 
 @Slf4j
 public class ORManagerImpl implements ORManager {
@@ -27,25 +27,25 @@ public class ORManagerImpl implements ORManager {
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
             if (cls.isAnnotationPresent(Entity.class)) {
-                String tableName = getTableName(cls);
+                String tableName = AnnotationUtils.getTableName(cls);
 
                 Field[] declaredFields = cls.getDeclaredFields();
-                ArrayList<String> sql = new ArrayList<>();
+                List<String> columnNames = new ArrayList<>();
 
                 for (Field field : declaredFields) {
                     Class<?> fieldType = field.getType();
-                    if (field.isAnnotationPresent(Id.class)) {
+                    if (!AnnotationUtils.getIdField(cls).equals("")) {
                         String name = field.getName();
-                        setColumnName(sql, fieldType, name, true, false);
-                    } else if (field.isAnnotationPresent(Column.class)) {
-                        String name = getFieldName(field);
-                        setColumnName(sql, fieldType, name, isUnique(field), canBeNull(field));
+                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, true, false);
+                    } else {
+                        String name = AnnotationUtils.getColumnName(field);
+                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
                     }
                 }
-                String sqlCreateTable = String.format("%s %s\n(%s);", CREATE_TABLE, tableName,
-                        String.join(",\n", sql));
-                System.out.println(sqlCreateTable);
-                try (var prepStmt = getConnection().prepareStatement(sqlCreateTable)) {
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
+                        String.join(",\n", columnNames));
+                log.atDebug().log(sqlCreateTable);
+                try (var prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
                     throw new RuntimeException(e);

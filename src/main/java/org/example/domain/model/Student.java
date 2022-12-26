@@ -1,36 +1,27 @@
 package org.example.domain.model;
 
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.Data;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 
-@Getter @Setter
+@Data
 @Entity
 @Table(name = "students")
-public class Student{
+public class Student {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "id", unique = true)
     private Long id;
-    @Column(name = "first_name",nullable = false, unique = true)
+    @Column(name = "first_name", nullable = false, unique = true)
     private String firstName;
 
     public Student(String firstName) {
         this.firstName = firstName;
     }
 
-    private Student() {
+    Student() {
     }
 
-    @Override
-    public String toString() {
-        return "Student{" +
-                "id=" + id +
-                ", name='" + firstName + '\'' +
-                '}';
-    }
 }
