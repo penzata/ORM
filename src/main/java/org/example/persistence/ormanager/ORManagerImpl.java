@@ -61,7 +61,6 @@ public class ORManagerImpl implements ORManager {
         if (checkIfObjectExists(o)) {
             return o;
         }
-
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
