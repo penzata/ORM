@@ -1,7 +1,6 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.domain.model.Student;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.utilities.AnnotationUtils;
 import org.example.persistence.utilities.SerializationUtil;
@@ -59,17 +58,16 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T save(T o) {
-        String insertStatement = "";
-        if (o.getClass() == Student.class) {
-            insertStatement = SQL_INSERT_STUDENT;
+        if (checkIfObjectExists(o)) {
+            return o;
         }
+
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(insertStatement, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             for (Field declaredField : declaredFields) {
                 declaredField.setAccessible(true);
             }
-
             ps.setString(1, declaredFields[2].get(o).toString());
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
@@ -85,13 +83,25 @@ public class ORManagerImpl implements ORManager {
         return o;
     }
 
+    private <T> boolean checkIfObjectExists(T o) {
+        boolean exists = false;
+        try {
+            Field id = o.getClass().getDeclaredField("id");
+            id.setAccessible(true);
+            exists = id.get(o) != null;
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return exists;
+    }
+
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        try {
-            Connection connection = dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
+
 
         return Optional.empty();
     }

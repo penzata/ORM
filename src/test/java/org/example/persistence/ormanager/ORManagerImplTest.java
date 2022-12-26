@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
 class ORManagerImplTest {
@@ -33,16 +34,6 @@ class ORManagerImplTest {
     Table createdTable;
     Student student1;
 
-    @BeforeAll
-    static void init() throws SQLException {
-        dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:test");
-        manager = Utils.withDataSource(dataSource);
-        connection = dataSource.getConnection();
-        createTableStmt = connection.prepareStatement(STUDENTS_TABLE);
-        createTableStmt.execute();
-    }
-
     @AfterEach
     void tearDown() throws SQLException {
         if (connection != null) {
@@ -51,10 +42,20 @@ class ORManagerImplTest {
         if (createTableStmt != null) {
             createTableStmt.close();
         }
+        if (dataSource != null) {
+            dataSource.close();
+        }
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
+        connection = dataSource.getConnection();
+        createTableStmt = connection.prepareStatement(STUDENTS_TABLE);
+        createTableStmt.execute();
+
         student1 = new Student("Johny");
         createdTable = new Table(dataSource, "students");
     }
@@ -76,6 +77,16 @@ class ORManagerImplTest {
         assertThat(savedStudent.getId()).isGreaterThan(0);
         assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
 
+        output(createdTable).toConsole();
+    }
+
+    @Test
+    void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
+        manager.save(student1);
+        manager.save(student1);
+        manager.save(student1);
+
+        assertThat(createdTable).hasNumberOfRows(1);
         output(createdTable).toConsole();
     }
 
