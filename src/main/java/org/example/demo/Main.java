@@ -2,6 +2,7 @@ package org.example.demo;
 
 import org.example.domain.model.Student;
 import org.example.persistence.ormanager.ORManager;
+import org.example.persistence.ormanager.ORManagerImpl;
 import org.example.persistence.utilities.Utils;
 
 public class Main {
@@ -11,5 +12,6 @@ public class Main {
 
         orManager.register(Student.class);
         orManager.save(new Student("Ivan"));
+        orManager.findAll(Student.class);
     }
 }

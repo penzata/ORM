@@ -19,9 +19,9 @@ import static org.example.persistence.sql.SQLDialect.CREATE_TABLE;
 import static org.example.persistence.sql.SQLDialect.SQL_INSERT_STUDENT;
 import static org.example.persistence.utilities.Utils.*;
 
+
 @Slf4j
 public class ORManagerImpl implements ORManager {
-
     private DataSource dataSource;
 
     public ORManagerImpl(DataSource dataSource) {
@@ -32,25 +32,25 @@ public class ORManagerImpl implements ORManager {
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
             if (cls.isAnnotationPresent(Entity.class)) {
-                String tableName = getTableName(cls);
+                String tableName = AnnotationUtils.getTableName(cls);
 
                 Field[] declaredFields = cls.getDeclaredFields();
-                ArrayList<String> sql = new ArrayList<>();
+                List<String> columnNames = new ArrayList<>();
 
                 for (Field field : declaredFields) {
                     Class<?> fieldType = field.getType();
-                    if (field.isAnnotationPresent(Id.class)) {
+                    if (!AnnotationUtils.getIdField(cls).equals("")) {
                         String name = field.getName();
-                        setColumnName(sql, fieldType, name, true, false);
-                    } else if (field.isAnnotationPresent(Column.class)) {
-                        String name = getFieldName(field);
-                        setColumnName(sql, fieldType, name, isUnique(field), canBeNull(field));
+                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, true, false);
+                    } else {
+                        String name = AnnotationUtils.getColumnName(field);
+                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
                     }
                 }
-                String sqlCreateTable = String.format("%s %s\n(%s);", CREATE_TABLE, tableName,
-                        String.join(",\n", sql));
-                System.out.println(sqlCreateTable);
-                try (var prepStmt = getConnection().prepareStatement(sqlCreateTable)) {
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
+                        String.join(",\n", columnNames));
+                log.atDebug().log(sqlCreateTable);
+                try (var prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
@@ -100,7 +100,23 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
-        return null;
+        List<Object> records = new ArrayList<>();
+        try {
+            Connection connection = dataSource.getConnection();
+            PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
+            ResultSet rs = st.executeQuery();
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            int columns = rsMetaData.getColumnCount();
+            while (rs.next()) {
+                for (int i = 1; i <= columns; i++) {
+                    records.add(rsMetaData.getColumnName(i) + ": " + rs.getString(rsMetaData.getColumnName(i)));
+                }
+            }
+            log.info(records.toString());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return (List<T>) records;
     }
 
     @Override
