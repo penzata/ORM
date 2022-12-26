@@ -1,9 +1,7 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.AnnotationUtils;
 
 import javax.sql.DataSource;
@@ -33,21 +31,21 @@ public class ORManagerImpl implements ORManager {
                 String tableName = AnnotationUtils.getTableName(cls);
 
                 Field[] declaredFields = cls.getDeclaredFields();
-                List<String> sql = new ArrayList<>();
+                List<String> columnNames = new ArrayList<>();
 
                 for (Field field : declaredFields) {
                     Class<?> fieldType = field.getType();
-                    if (field.isAnnotationPresent(Id.class)) {
+                    if (!AnnotationUtils.getIdField(field).equals("")) {
                         String name = field.getName();
-                        AnnotationUtils.setColumnName(sql, fieldType, name, true, false);
-                    } else if (field.isAnnotationPresent(Column.class)) {
+                        AnnotationUtils.setColumnName(columnNames, fieldType, name, true, false);
+                    } else {
                         String name = AnnotationUtils.getFieldName(field);
-                        AnnotationUtils.setColumnName(sql, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
+                        AnnotationUtils.setColumnName(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
                     }
                 }
-                String sqlCreateTable = String.format("%s %s\n(%s);", CREATE_TABLE, tableName,
-                        String.join(",\n", sql));
-                System.out.println(sqlCreateTable);
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
+                        String.join(",\n", columnNames));
+                log.info(sqlCreateTable);
                 try (var prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
