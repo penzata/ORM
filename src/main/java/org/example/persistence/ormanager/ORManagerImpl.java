@@ -35,7 +35,7 @@ public class ORManagerImpl implements ORManager {
 
                 for (Field field : declaredFields) {
                     Class<?> fieldType = field.getType();
-                    if (!AnnotationUtils.getIdField(field).equals("")) {
+                    if (!AnnotationUtils.getIdField(cls).equals("")) {
                         String name = field.getName();
                         AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, true, false);
                     } else {
