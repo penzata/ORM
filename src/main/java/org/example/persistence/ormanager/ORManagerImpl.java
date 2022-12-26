@@ -1,8 +1,11 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.domain.model.Student;
+import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.utilities.AnnotationUtils;
+import org.example.persistence.annotations.Id;
+import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -14,6 +17,8 @@ import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.CREATE_TABLE;
 import static org.example.persistence.sql.SQLDialect.SQL_INSERT_STUDENT;
+import static org.example.persistence.utilities.Utils.*;
+
 
 @Slf4j
 public class ORManagerImpl implements ORManager {
@@ -56,25 +61,29 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T save(T o) {
-        try {
+        String insertStatement = "";
+        if (o.getClass() == Student.class) {
+            insertStatement = SQL_INSERT_STUDENT;
+        }
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(insertStatement, Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             for (Field declaredField : declaredFields) {
                 declaredField.setAccessible(true);
             }
-            Connection connection = dataSource.getConnection();
-            PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, declaredFields[1].get(o).toString());
-            int rows = ps.executeUpdate();
+
+            ps.setString(1, declaredFields[2].get(o).toString());
+            ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
-                log.info(declaredFields[1].getName());
-                declaredFields[0].set(o, rs.getLong(1));
+                long generatedId = rs.getLong(1);
+                declaredFields[1].set(o, generatedId);
             }
-            log.info(rows + " rows affected");
-
-        } catch (Exception e) {
+        } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
+        log.info("created object: " + o.toString());
+        SerializationUtil.serialize(o, "studentsList.ser");
         return o;
     }
 
