@@ -2,12 +2,13 @@ package org.example.persistence.utilities;
 
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.List;
 
 public class AnnotationUtils {
 
@@ -27,7 +28,7 @@ public class AnnotationUtils {
         }
     }
 
-    public static String getFieldName(Field field) {
+    public static String getColumnName(Field field) {
         if (field.isAnnotationPresent(Column.class)) {
             String fieldName = field.getAnnotation(Column.class).name();
             return fieldName.equals("") ? field.getName() : fieldName;
@@ -36,9 +37,15 @@ public class AnnotationUtils {
         }
     }
 
-    public static FieldInfo getIdField(Class<?> clss) {
-
-        return null;
+    public static String getIdField(Field field) {
+        String result = "";
+//        for (Field field : clss.getDeclaredFields()) {
+            if (field.isAnnotationPresent(Id.class)) {
+                result = field.getName();
+//                break;
+            }
+//        }
+        return result;
     }
 
     public static boolean isUnique(Field field) {
@@ -49,22 +56,23 @@ public class AnnotationUtils {
         return field.getAnnotation(Column.class).nullable();
     }
 
-    public static void setColumnName(ArrayList<String> sql, Class<?> type, String name, boolean isUnique, boolean canBeNull) {
+    public static void sqlColumnDeclaration(List<String> columnNames, Class<?> fieldType, String name, boolean isUnique, boolean canBeNull) {
         String constraints =
                 (isUnique ? " UNIQUE " : "") +
-                        (canBeNull ? "" : "NOT NULL");
+                        (canBeNull ? "" : " NOT NULL");
 
-        if (type == Long.class) {
-            sql.add(name + SQLDialect.ID);
+        if (fieldType == Long.class) {
+            columnNames.add(name + SQLDialect.ID);
         }
-        if (type == String.class) {
-            sql.add(name + SQLDialect.NAME + constraints);
-        } else if (type == LocalDate.class) {
-            sql.add(name + SQLDialect.DATETIME + constraints);
-        } else if (type == int.class) {
-            sql.add(name + SQLDialect.INT + constraints);
-        } else if (type == boolean.class) {
-            sql.add(name + SQLDialect.BOOLEAN + constraints);
+        if (fieldType == String.class) {
+            columnNames.add(name + SQLDialect.STRING + constraints);
+        } else if (fieldType == LocalDate.class) {
+            columnNames.add(name + SQLDialect.DATETIME + constraints);
+        } else if (fieldType == int.class) {
+            columnNames.add(name + SQLDialect.INT + constraints);
+        } else if (fieldType == boolean.class) {
+            columnNames.add(name + SQLDialect.BOOLEAN + constraints);
         }
     }
+
 }
