@@ -12,7 +12,7 @@ import org.example.persistence.annotations.Table;
 public class Student {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "id", unique = true)
     private Long id;
     @Column(name = "first_name", nullable = false)
     private String firstName;
