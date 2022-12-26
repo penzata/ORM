@@ -2,9 +2,8 @@ package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.Student;
-import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.annotations.Id;
+import org.example.persistence.utilities.AnnotationUtils;
 import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
@@ -15,9 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.example.persistence.sql.SQLDialect.CREATE_TABLE;
-import static org.example.persistence.sql.SQLDialect.SQL_INSERT_STUDENT;
-import static org.example.persistence.utilities.Utils.*;
+import static org.example.persistence.sql.SQLDialect.*;
+import static org.example.persistence.utilities.AnnotationUtils.getTableName;
 
 
 @Slf4j
@@ -32,7 +30,7 @@ public class ORManagerImpl implements ORManager {
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
             if (cls.isAnnotationPresent(Entity.class)) {
-                String tableName = AnnotationUtils.getTableName(cls);
+                String tableName = getTableName(cls);
 
                 Field[] declaredFields = cls.getDeclaredFields();
                 List<String> columnNames = new ArrayList<>();
