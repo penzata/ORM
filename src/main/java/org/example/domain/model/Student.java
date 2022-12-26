@@ -1,22 +1,23 @@
 package org.example.domain.model;
 
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 
-@Getter @Setter
+import java.io.Serializable;
+
+@Getter
+@Setter
 @Entity
 @Table(name = "students")
-public class Student{
-
+public class Student implements Serializable {
     @Id
     @Column(name = "id")
     private Long id;
-    @Column(name = "first_name",nullable = false)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
     public Student(String firstName) {
