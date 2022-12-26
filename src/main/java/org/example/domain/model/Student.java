@@ -7,6 +7,7 @@ import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Getter
@@ -14,6 +15,8 @@ import java.io.Serializable;
 @Entity
 @Table(name = "students")
 public class Student implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 42L;
     @Id
     @Column(name = "id")
     private Long id;

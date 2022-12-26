@@ -72,12 +72,12 @@ public class ORManagerImpl implements ORManager {
                 declaredField.setAccessible(true);
             }
 
-            ps.setString(1, declaredFields[1].get(o).toString());
+            ps.setString(1, declaredFields[2].get(o).toString());
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
                 long generatedId = rs.getLong(1);
-                declaredFields[0].set(o, generatedId);
+                declaredFields[1].set(o, generatedId);
             }
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
