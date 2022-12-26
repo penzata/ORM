@@ -56,7 +56,7 @@ class AnnotationsTest {
         String expectedFieldName = "trialId";
 
         Field[] declaredFields = WithoutAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getFieldName(declaredFields[0]);
+        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
 
         assertEquals(expectedFieldName, fieldName);
     }
@@ -66,7 +66,7 @@ class AnnotationsTest {
         String expectedFieldName = "id";
 
         Field[] declaredFields = WithAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getFieldName(declaredFields[0]);
+        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
 
         assertEquals(expectedFieldName, fieldName);
     }
@@ -76,7 +76,7 @@ class AnnotationsTest {
         String expectedTableName = "trialId";
 
         Field[] declaredFields = DefaultAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getFieldName(declaredFields[0]);
+        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
 
         assertEquals(expectedTableName, fieldName);
     }
@@ -107,9 +107,24 @@ class AnnotationsTest {
         assertNotEquals(expectedNullableValue, nullableSet);
     }
 
+    @Test
+    void WhenIdIsAbsentThenReturnEmptyString() {
+        String idField = AnnotationUtils.getIdField(WithoutAnno.class);
+
+        assertEquals("", idField);
+    }
+
+    @Test
+    void WhenIdIsPresentThenReturnIt() {
+        String idField = AnnotationUtils.getIdField(WithAnno.class);
+
+        assertNotNull(idField);
+    }
+
     @Entity
     @Table(name = "named_table")
     static class WithAnno {
+        @Id
         @Column(name = "id", unique = true)
         Long trialId;
         @Column(name = "first_name", nullable = false)
