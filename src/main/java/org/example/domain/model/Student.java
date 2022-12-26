@@ -14,7 +14,7 @@ public class Student {
     @Id
     @Column(name = "id", unique = true)
     private Long id;
-    @Column(name = "first_name", nullable = false)
+    @Column(name = "first_name", nullable = false, unique = true)
     private String firstName;
 
     public Student(String firstName) {

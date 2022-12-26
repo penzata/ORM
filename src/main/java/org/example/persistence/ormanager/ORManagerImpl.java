@@ -17,7 +17,6 @@ import static org.example.persistence.sql.SQLDialect.SQL_INSERT_STUDENT;
 
 @Slf4j
 public class ORManagerImpl implements ORManager {
-
     private DataSource dataSource;
 
     public ORManagerImpl(DataSource dataSource) {
@@ -92,7 +91,23 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
-        return null;
+        List<Object> records = new ArrayList<>();
+        try {
+            Connection connection = dataSource.getConnection();
+            PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
+            ResultSet rs = st.executeQuery();
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            int columns = rsMetaData.getColumnCount();
+            while (rs.next()) {
+                for (int i = 1; i <= columns; i++) {
+                    records.add(rsMetaData.getColumnName(i) + ": " + rs.getString(rsMetaData.getColumnName(i)));
+                }
+            }
+            log.info(records.toString());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return (List<T>) records;
     }
 
     @Override
