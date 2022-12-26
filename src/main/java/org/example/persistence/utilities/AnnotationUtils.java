@@ -37,14 +37,14 @@ public class AnnotationUtils {
         }
     }
 
-    public static String getIdField(Field field) {
+    public static String getIdField(Class<?> clss) {
         String result = "";
-//        for (Field field : clss.getDeclaredFields()) {
+        for (Field field : clss.getDeclaredFields()) {
             if (field.isAnnotationPresent(Id.class)) {
                 result = field.getName();
-//                break;
+                break;
             }
-//        }
+        }
         return result;
     }
 
