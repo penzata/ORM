@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
 class ORManagerImplTest {
@@ -73,12 +73,19 @@ class ORManagerImplTest {
         Student savedStudent = manager.save(student1);
         Student savedBeavis = manager.save(new Student("Beavis"));
 
-        assertThat(savedStudent.getId()).isNotNull();
-        assertThat(savedBeavis.getId()).isNotNull();
+        assertThat(savedStudent.getId()).isGreaterThan(0);
+        assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
 
         output(createdTable).toConsole();
     }
 
+    @Test
+    void canFindPersonById() {
+        Student savedStudent = manager.save(new Student("Dick"));
+        Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
 
+        assertThat(foundStudent).isPresent();
+        assertThat(foundStudent.get().getId()).isEqualTo(savedStudent.getId());
+    }
 
 }
