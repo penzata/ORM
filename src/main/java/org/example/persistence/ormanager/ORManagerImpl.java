@@ -33,7 +33,7 @@ public class ORManagerImpl implements ORManager {
                 String tableName = AnnotationUtils.getTableName(cls);
 
                 Field[] declaredFields = cls.getDeclaredFields();
-                ArrayList<String> sql = new ArrayList<>();
+                List<String> sql = new ArrayList<>();
 
                 for (Field field : declaredFields) {
                     Class<?> fieldType = field.getType();
