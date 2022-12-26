@@ -37,15 +37,15 @@ public class ORManagerImpl implements ORManager {
                     Class<?> fieldType = field.getType();
                     if (!AnnotationUtils.getIdField(field).equals("")) {
                         String name = field.getName();
-                        AnnotationUtils.setColumnName(columnNames, fieldType, name, true, false);
+                        AnnotationUtils.setSqlColumnStatement(columnNames, fieldType, name, true, false);
                     } else {
-                        String name = AnnotationUtils.getFieldName(field);
-                        AnnotationUtils.setColumnName(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
+                        String name = AnnotationUtils.getColumnName(field);
+                        AnnotationUtils.setSqlColumnStatement(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
                     }
                 }
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
-                log.info(sqlCreateTable);
+                log.atDebug().log(sqlCreateTable);
                 try (var prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
