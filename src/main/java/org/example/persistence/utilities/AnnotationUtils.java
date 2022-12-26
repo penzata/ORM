@@ -56,6 +56,8 @@ public class AnnotationUtils {
         return field.getAnnotation(Column.class).nullable();
     }
 
+    //todo method needs to be rewritten not to work only with isolated case
+    //todo maybe consider putting all field methods under one FieldInfo class
     public static void sqlColumnDeclaration(List<String> columnNames, Class<?> fieldType, String name, boolean isUnique, boolean canBeNull) {
         String constraints =
                 (isUnique ? " UNIQUE " : "") +
