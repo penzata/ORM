@@ -62,7 +62,7 @@ public class ORManagerImpl implements ORManager {
             return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(SQL_INSERT_STUDENT, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             for (Field declaredField : declaredFields) {
                 declaredField.setAccessible(true);
@@ -78,7 +78,7 @@ public class ORManagerImpl implements ORManager {
             e.printStackTrace();
         }
         log.info("created object: " + o.toString());
-        SerializationUtil.serialize(o, "studentsList.ser");
+        SerializationUtil.serialize(o);
         return o;
     }
 
@@ -92,6 +92,11 @@ public class ORManagerImpl implements ORManager {
             e.printStackTrace();
         }
         return exists;
+    }
+
+    private <T> String getTableNameForInsert(T o) {
+        String tableName = getTableName(o.getClass());
+        return tableName.equals("students") ? SQL_INSERT_STUDENT : "";
     }
 
     @Override
