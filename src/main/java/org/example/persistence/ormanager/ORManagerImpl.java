@@ -1,6 +1,7 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.domain.model.Student;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.utilities.AnnotationUtils;
 import org.example.persistence.utilities.SerializationUtil;
@@ -100,13 +101,22 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        try (Connection connection = dataSource.getConnection()) {
+        //todo needs to make it work with different objects
+        Student studentToFind = null;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement("SELECT * FROM " + getTableName(cls) + " WHERE id=?")) {
+            ps.setLong(1, (Long) id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                long personId = rs.getLong("id");
+                String firstName = rs.getString("first_name");
+                studentToFind = new Student(firstName);
+                studentToFind.setId(personId);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-
-        return Optional.empty();
+        return (Optional<T>) Optional.of(studentToFind);
     }
 
     @Override
