@@ -1,9 +1,14 @@
 package org.example.persistence.sql;
 
+import static org.example.persistence.utilities.AnnotationUtils.getTableName;
+
 public class SQLDialect {
     public static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
     public static final String SQL_INSERT_STUDENT = """
             INSERT INTO STUDENTS (first_name) values(?);
+            """;
+    public static final String SQL_FIND_BY_ID_STUDENT = """
+            SELECT * FROM STUDENTS WHERE id=?
             """;
     public static final String SQL_FIND_ALL = """
             SELECT * FROM
@@ -15,4 +20,14 @@ public class SQLDialect {
     public static final String INT = " INT";
     public static final String LONG = " BIGINT";
     public static final String BOOLEAN = " BOOLEAN";
+
+    public static String getTableNameForInsert(Class<?> clss) {
+        String tableName = getTableName(clss);
+        return tableName.equals("students") ? SQL_INSERT_STUDENT : "";
+    }
+
+    public static String getTableNameForSelect(Class<?> clss) {
+        String tableName = getTableName(clss);
+        return tableName.equals("students") ? SQL_FIND_BY_ID_STUDENT : "";
+    }
 }
