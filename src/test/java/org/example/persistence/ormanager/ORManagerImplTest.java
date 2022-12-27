@@ -5,7 +5,6 @@ import org.assertj.db.type.Table;
 import org.example.domain.model.Student;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -94,10 +93,18 @@ class ORManagerImplTest {
     @Test
     void canFindPersonById() {
         Student savedStudent = manager.save(new Student("Dick"));
+
         Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
 
         assertThat(foundStudent).isPresent();
         assertThat(foundStudent.get().getId()).isEqualTo(savedStudent.getId());
+    }
+
+    @Test
+    void WhenIdDoesntExistsThenReturnNullableObject() {
+        Optional<Student> personToBeFound = manager.findById(-1L, Student.class);
+
+        assertThat(personToBeFound).isEmpty();
     }
 
 }
