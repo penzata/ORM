@@ -8,7 +8,9 @@ import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,8 +98,16 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        //todo needs to make it work with different objects
-        Student studentToFind = null;
+        T objectToFind;
+        Constructor<T> declaredConstructor;
+        Field[] declaredFields = cls.getDeclaredFields();
+        try {
+            declaredConstructor = cls.getDeclaredConstructor();
+            declaredConstructor.setAccessible(true);
+            objectToFind = declaredConstructor.newInstance();
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
@@ -105,13 +115,15 @@ public class ORManagerImpl implements ORManager {
             while (rs.next()) {
                 long personId = rs.getLong("id");
                 String firstName = rs.getString("first_name");
-                studentToFind = new Student(firstName);
-                studentToFind.setId(personId);
+                declaredFields[1].setAccessible(true);
+                declaredFields[1].set(objectToFind, personId);
+                declaredFields[2].setAccessible(true);
+                declaredFields[2].set(objectToFind, firstName);
             }
-        } catch (SQLException e) {
+        } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        return (Optional<T>) Optional.ofNullable(studentToFind);
+        return Optional.of(objectToFind);
     }
 
     @Override

@@ -104,7 +104,8 @@ class ORManagerImplTest {
     void WhenIdDoesntExistsThenReturnNullableObject() {
         Optional<Student> personToBeFound = manager.findById(-1L, Student.class);
 
-        assertThat(personToBeFound).isEmpty();
+        assertThat(personToBeFound.get().getId()).isNull();
+        assertThat(personToBeFound.get().getFirstName()).isNull();
     }
 
 }
