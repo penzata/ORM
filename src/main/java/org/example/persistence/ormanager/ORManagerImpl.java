@@ -64,13 +64,12 @@ public class ORManagerImpl implements ORManager {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
-            for (Field declaredField : declaredFields) {
-                declaredField.setAccessible(true);
-            }
+            declaredFields[2].setAccessible(true);
             ps.setString(1, declaredFields[2].get(o).toString());
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
+                declaredFields[1].setAccessible(true);
                 long generatedId = rs.getLong(1);
                 declaredFields[1].set(o, generatedId);
             }
