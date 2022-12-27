@@ -63,7 +63,7 @@ public class ORManagerImpl implements ORManager {
             return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o), Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             declaredFields[2].setAccessible(true);
             ps.setString(1, declaredFields[2].get(o).toString());
@@ -94,17 +94,12 @@ public class ORManagerImpl implements ORManager {
         return exists;
     }
 
-    private <T> String getTableNameForInsert(T o) {
-        String tableName = getTableName(o.getClass());
-        return tableName.equals("students") ? SQL_INSERT_STUDENT : "";
-    }
-
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
         //todo needs to make it work with different objects
         Student studentToFind = null;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement("SELECT * FROM " + getTableName(cls) + " WHERE id=?")) {
+             PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -116,7 +111,7 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return (Optional<T>) Optional.of(studentToFind);
+        return (Optional<T>) Optional.ofNullable(studentToFind);
     }
 
     @Override
