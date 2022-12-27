@@ -74,7 +74,7 @@ class ORManagerImplTest {
         Student savedStudent = manager.save(student1);
         Student savedBeavis = manager.save(new Student("Beavis"));
 
-        assertThat(savedStudent.getId()).isGreaterThan(0);
+        assertThat(savedStudent.getId()).isPositive();
         assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
 
         output(createdTable).toConsole();
@@ -87,6 +87,7 @@ class ORManagerImplTest {
         manager.save(student1);
 
         assertThat(createdTable).hasNumberOfRows(1);
+
         output(createdTable).toConsole();
     }
 
