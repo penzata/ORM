@@ -99,10 +99,9 @@ public class ORManagerImpl implements ORManager {
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
         T objectToFind;
-        Constructor<T> declaredConstructor;
         Field[] declaredFields = cls.getDeclaredFields();
         try {
-            declaredConstructor = cls.getDeclaredConstructor();
+            Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
             declaredConstructor.setAccessible(true);
             objectToFind = declaredConstructor.newInstance();
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
