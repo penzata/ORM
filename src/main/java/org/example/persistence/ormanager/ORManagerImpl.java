@@ -111,9 +111,10 @@ public class ORManagerImpl implements ORManager {
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
             ResultSet rs = ps.executeQuery();
+            ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong("id");
-                String firstName = rs.getString("first_name");
+                long personId = rs.getLong(rsMetaData.getColumnName(1));
+                String firstName = rs.getString(rsMetaData.getColumnName(2));
                 declaredFields[1].setAccessible(true);
                 declaredFields[1].set(objectToFind, personId);
                 declaredFields[2].setAccessible(true);
