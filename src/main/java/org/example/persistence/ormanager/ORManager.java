@@ -1,6 +1,7 @@
 package org.example.persistence.ormanager;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 

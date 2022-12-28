@@ -64,7 +64,6 @@ class ORManagerImplTest {
         Student savedStudent = manager.save(student1);
 
         assertThat(savedStudent.getId()).isNotNull();
-
         output(createdTable).toConsole();
     }
 
@@ -106,6 +105,12 @@ class ORManagerImplTest {
 
         assertThat(personToBeFound.get().getId()).isNull();
         assertThat(personToBeFound.get().getFirstName()).isNull();
+    }
+    @Test
+    void test(){
+        manager.save(new Student("Ivan"));
+        manager.save(new Student("Petkan"));
+        manager.findAll(Student.class);
     }
 
 }
