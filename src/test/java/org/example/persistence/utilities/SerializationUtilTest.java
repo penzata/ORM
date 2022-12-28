@@ -2,45 +2,54 @@ package org.example.persistence.utilities;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.domain.model.Student;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 class SerializationUtilTest {
 
-    static String fileName;
-    Student student;
+    @RepeatedTest(3)
+    void serialization() {
+        Student st = new Student("Jorji");
+        st.setId(3L);
+        SerializationUtil.serialize(st);
 
-    @BeforeAll
-    static void init() {
-        fileName = "serTest.ser";
-    }
-
-    @BeforeEach
-    void setUp() {
-        student = new Student("Jorji");
-        student.setId(3L);
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
-
-    @RepeatedTest(10)
-    void SerializationTest() {
-        SerializationUtil.serialize(student, fileName);
-
-        log.atDebug().log("before serialization: {}", student);
-
+        log.atDebug().log("before serialization: {}, {}", st, st.hashCode());
     }
 
     @Test
-    void DeserializationTest() {
+    void deserialization() {
         List<Object> emptyStudentsList = null;
-        emptyStudentsList = SerializationUtil.deserialize(fileName);
+        emptyStudentsList = SerializationUtil.deserialize(Student.class);
 
         log.atDebug().log("after deserialization: {}", emptyStudentsList);
     }
+
+    @Test
+    void WhenSerializeAndTheDeserializeObjectThenReturnThanTheyAreEquals() {
+        Student student = new Student("Jack");
+        student.setId(33L);
+        Student student2 = new Student("Black");
+        student.setId(248L);
+
+        SerializationUtil.serialize(student);
+        SerializationUtil.serialize(student2);
+        List<Object> deserializedStudents = SerializationUtil.deserialize(Student.class);
+
+        assertThat(student).usingRecursiveComparison().isEqualTo(deserializedStudents.get(0));
+        assertThat(student).isEqualTo(deserializedStudents.get(0));
+        assertThat(student2).usingRecursiveComparison().isEqualTo(deserializedStudents.get(1));
+        assertThat(student2).isEqualTo(deserializedStudents.get(1));
+
+        log.atDebug().log("student's hashcode: {}\n" +
+                        "student2's hashcode: {}\n" +
+                        "deserializedStudents's hashcode: {}, {}",
+                student.hashCode(), student2.hashCode(),
+                deserializedStudents.get(0).hashCode(), deserializedStudents.get(1).hashCode());
+    }
+
 }

@@ -8,7 +8,9 @@ import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,21 +61,18 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T save(T o) {
-        String insertStatement = "";
-        if (o.getClass() == Student.class) {
-            insertStatement = SQL_INSERT_STUDENT;
+        if (checkIfObjectExists(o)) {
+            return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(insertStatement, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
-            for (Field declaredField : declaredFields) {
-                declaredField.setAccessible(true);
-            }
-
+            declaredFields[2].setAccessible(true);
             ps.setString(1, declaredFields[2].get(o).toString());
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
+                declaredFields[1].setAccessible(true);
                 long generatedId = rs.getLong(1);
                 declaredFields[1].set(o, generatedId);
             }
@@ -81,19 +80,49 @@ public class ORManagerImpl implements ORManager {
             e.printStackTrace();
         }
         log.info("created object: " + o.toString());
-        SerializationUtil.serialize(o, "studentsList.ser");
+        SerializationUtil.serialize(o);
         return o;
+    }
+
+    private <T> boolean checkIfObjectExists(T o) {
+        boolean exists = false;
+        try {
+            Field id = o.getClass().getDeclaredField("id");
+            id.setAccessible(true);
+            exists = id.get(o) != null;
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return exists;
     }
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
+        T objectToFind;
+        Field[] declaredFields = cls.getDeclaredFields();
         try {
-            Connection connection = dataSource.getConnection();
-        } catch (SQLException e) {
+            Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
+            declaredConstructor.setAccessible(true);
+            objectToFind = declaredConstructor.newInstance();
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-
-        return Optional.empty();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
+            ps.setLong(1, (Long) id);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                long personId = rs.getLong("id");
+                String firstName = rs.getString("first_name");
+                declaredFields[1].setAccessible(true);
+                declaredFields[1].set(objectToFind, personId);
+                declaredFields[2].setAccessible(true);
+                declaredFields[2].set(objectToFind, firstName);
+            }
+        } catch (SQLException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return Optional.of(objectToFind);
     }
 
     @Override
