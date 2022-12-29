@@ -2,14 +2,17 @@ package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.assertj.db.type.Table;
+import org.assertj.db.type.ValueType;
 import org.example.domain.model.Student;
+import org.example.persistence.annotations.Column;
+import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -18,18 +21,9 @@ import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
 class ORManagerImplTest {
-    //language=H2
-    private static final String STUDENTS_TABLE = """
-            CREATE TABLE IF NOT EXISTS students
-            (
-            id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-            first_name VARCHAR(30) NOT NULL
-            )
-            """;
     static ORManager manager;
     static HikariDataSource dataSource;
     static Connection connection;
-    static PreparedStatement createTableStmt;
     Table createdTable;
     Student student1;
 
@@ -37,9 +31,6 @@ class ORManagerImplTest {
     void tearDown() throws SQLException {
         if (connection != null) {
             connection.close();
-        }
-        if (createTableStmt != null) {
-            createTableStmt.close();
         }
         if (dataSource != null) {
             dataSource.close();
@@ -52,8 +43,7 @@ class ORManagerImplTest {
         dataSource.setJdbcUrl("jdbc:h2:mem:test");
         manager = Utils.withDataSource(dataSource);
         connection = dataSource.getConnection();
-        createTableStmt = connection.prepareStatement(STUDENTS_TABLE);
-        createTableStmt.execute();
+        manager.register(Student.class);
 
         student1 = new Student("Johny");
         createdTable = new Table(dataSource, "students");
@@ -106,6 +96,27 @@ class ORManagerImplTest {
 
         assertThat(personToBeFound.get().getId()).isNull();
         assertThat(personToBeFound.get().getFirstName()).isNull();
+    }
+
+    @Test
+    void WhenRegisterAnEntityReturnATableMatchingItsFields() {
+        @Entity
+        @org.example.persistence.annotations.Table(name = "named_table")
+        class WithAnno {
+            @Id
+            @Column(name = "trialId")
+            int trialId;
+            @Column(name = "trialFirstName", nullable = false)
+            String trialFirstName;
+            @Column
+            boolean under18;
+        }
+        Table table = new Table(dataSource, "named_table");
+
+        manager.register(WithAnno.class);
+
+        assertThat(table).column("trialId")
+                .isOfType(ValueType.TEXT, true);
     }
 
 }
