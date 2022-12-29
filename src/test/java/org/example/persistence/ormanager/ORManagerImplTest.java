@@ -1,6 +1,7 @@
 package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.db.type.Table;
 import org.example.domain.model.Student;
 import org.example.persistence.annotations.Column;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
+@Slf4j
 class ORManagerImplTest {
     ORManager manager;
     HikariDataSource dataSource;
@@ -51,7 +53,6 @@ class ORManagerImplTest {
         manager = Utils.withDataSource(dataSource);
         manager.register(Student.class);
         connection = dataSource.getConnection();
-        connection.setAutoCommit(false);
         createdStudentsTable = new Table(dataSource, "students");
         student1 = new Student("Johny");
     }
