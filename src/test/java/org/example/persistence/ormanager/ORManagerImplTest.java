@@ -51,6 +51,7 @@ class ORManagerImplTest {
         manager = Utils.withDataSource(dataSource);
         manager.register(Student.class);
         connection = dataSource.getConnection();
+        connection.setAutoCommit(false);
         createdStudentsTable = new Table(dataSource, "students");
         student1 = new Student("Johny");
     }
@@ -61,7 +62,7 @@ class ORManagerImplTest {
 
         assertThat(savedStudent.getId()).isNotNull();
 
-        output(createdStudentsTable).toFile("tableFromTests");
+        output(createdStudentsTable).toFile("tableFromTest");
     }
 
     @Test
@@ -84,7 +85,7 @@ class ORManagerImplTest {
 
         assertThat(createdStudentsTable).hasNumberOfRows(1);
 
-        output(createdStudentsTable).toFile("tableFromTests");
+        output(createdStudentsTable).toFile("tableFromTest");
     }
 
     @Test
@@ -117,7 +118,7 @@ class ORManagerImplTest {
                 .value().isEqualTo(2)
                 .value().isEqualTo("Petkan");
 
-        output(createdStudentsTable).toFile("tableFromTests");
+        output(createdStudentsTable).toFile("tableFromTest");
     }
 
     @Test
@@ -141,7 +142,7 @@ class ORManagerImplTest {
         assertThat(table).column(1)
                 .hasColumnName("trial_first_name");
 
-        output(table).toFile("tableFromTests");
+        output(table).toFile("tableFromTest");
     }
 
     @Test
