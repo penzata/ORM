@@ -98,7 +98,6 @@ public class ORManagerImpl implements ORManager {
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
             ResultSet rs = ps.executeQuery();
-            ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
                 long personId = rs.getLong(1);
                 String firstName = rs.getString(2);
@@ -116,22 +115,21 @@ public class ORManagerImpl implements ORManager {
     @Override
     public <T> List<T> findAll(Class<T> cls) {
         List<T> records = new ArrayList<>();
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
-                    Constructor<T> objDeclaretdConstructor =  cls.getDeclaredConstructor();
-                    objDeclaretdConstructor.setAccessible(true);
-                    T myObj = objDeclaretdConstructor.newInstance();
-                    Field[] fields = myObj.getClass().getDeclaredFields();
-                    fields[0].setAccessible(true);
-                    fields[0].set(myObj, rs.getLong(1));
-                    fields[1].setAccessible(true);
-                    fields[1].set(myObj,rs.getString(2));
-                    records.add(myObj);
+                Constructor<T> objDeclaredConstructor = cls.getDeclaredConstructor();
+                objDeclaredConstructor.setAccessible(true);
+                T myObj = objDeclaredConstructor.newInstance();
+                Field[] fields = myObj.getClass().getDeclaredFields();
+                fields[0].setAccessible(true);
+                fields[0].set(myObj, rs.getLong(1));
+                fields[1].setAccessible(true);
+                fields[1].set(myObj, rs.getString(2));
+                records.add(myObj);
             }
-            log.info(records.toString());
+            log.info("all records: {}", records);
         } catch (Exception e) {
             e.printStackTrace();
         }
