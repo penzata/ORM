@@ -3,5 +3,5 @@
 /src/database/
 /src/main/resources/tests_coverage/
 /logs/
-/tableFromTests
+/tableFromTest
 /StudentsSerList.ser
