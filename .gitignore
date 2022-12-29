@@ -2,6 +2,6 @@
 /target/
 /src/database/
 /src/main/resources/tests_coverage/
-/StudentsSerList
 /logs/
 /tableFromTests
+/StudentsSerList.ser
