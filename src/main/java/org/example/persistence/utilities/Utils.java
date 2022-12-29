@@ -58,7 +58,7 @@ public class Utils {
 
     /**
      * @return connection from the datasource, provided by the created ORM Manager.
-     * @throws SQLException
+     * @throws SQLException Need to initialize ORManager first to set the data source.
      */
     public static Connection getConnection() throws SQLException {
         return dataSource != null ? dataSource.getConnection() : null;
