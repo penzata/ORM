@@ -9,6 +9,7 @@ import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,29 +25,29 @@ class ORManagerImplTest {
     static ORManager manager;
     static HikariDataSource dataSource;
     static Connection connection;
-    Table createdTable;
+    static Table createdTable;
     Student student1;
+
+    @BeforeAll
+    static void init() {
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
+        manager.register(Student.class);
+        createdTable = new Table(dataSource, "students");
+    }
 
     @AfterEach
     void tearDown() throws SQLException {
         if (connection != null) {
             connection.close();
         }
-        if (dataSource != null) {
-            dataSource.close();
-        }
     }
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:test");
-        manager = Utils.withDataSource(dataSource);
         connection = dataSource.getConnection();
-        manager.register(Student.class);
-
         student1 = new Student("Johny");
-        createdTable = new Table(dataSource, "students");
     }
 
     @Test
@@ -101,22 +102,25 @@ class ORManagerImplTest {
     @Test
     void WhenRegisterAnEntityReturnATableMatchingItsFields() {
         @Entity
-        @org.example.persistence.annotations.Table(name = "named_table")
-        class WithAnno {
+        @org.example.persistence.annotations.Table(name = "trial_table")
+        class TrialTable {
             @Id
-            @Column(name = "trialId")
+            @Column(name = "trial_id")
             int trialId;
-            @Column(name = "trialFirstName", nullable = false)
+            @Column(name = "trial_first_name", nullable = false)
             String trialFirstName;
-            @Column
+            @Column(nullable = false)
             boolean under18;
         }
-        Table table = new Table(dataSource, "named_table");
+        Table table = new Table(dataSource, "trial_table");
 
-        manager.register(WithAnno.class);
+        manager.register(TrialTable.class);
 
-        assertThat(table).column("trialId")
-                .isOfType(ValueType.TEXT, true);
+        assertThat(table).hasNumberOfColumns(3);
+        assertThat(table).column(1)
+                        .hasColumnName("trial_first_name");
+
+        output(table).toConsole();
     }
 
 }
