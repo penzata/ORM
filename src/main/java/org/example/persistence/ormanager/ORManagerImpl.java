@@ -100,8 +100,8 @@ public class ORManagerImpl implements ORManager {
             ResultSet rs = ps.executeQuery();
             ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong(rsMetaData.getColumnName(0));
-                String firstName = rs.getString(rsMetaData.getColumnName(1));
+                long personId = rs.getLong(rsMetaData.getColumnName(1));
+                String firstName = rs.getString(2);
                 declaredFields[0].setAccessible(true);
                 declaredFields[0].set(objectToFind, personId);
                 declaredFields[1].setAccessible(true);
@@ -110,6 +110,7 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
+        log.info(String.valueOf(Optional.of(objectToFind)));
         return Optional.of(objectToFind);
     }
 
@@ -125,10 +126,10 @@ public class ORManagerImpl implements ORManager {
                     objDeclaretdConstructor.setAccessible(true);
                     T myObj = objDeclaretdConstructor.newInstance();
                     Field[] fields = myObj.getClass().getDeclaredFields();
+                    fields[0].setAccessible(true);
+                    fields[0].set(myObj, rs.getLong(1));
                     fields[1].setAccessible(true);
-                    fields[1].set(myObj, rs.getLong(1));
-                    fields[2].setAccessible(true);
-                    fields[2].set(myObj,rs.getString(2));
+                    fields[1].set(myObj,rs.getString(2));
                     records.add(myObj);
             }
             log.info(records.toString());
