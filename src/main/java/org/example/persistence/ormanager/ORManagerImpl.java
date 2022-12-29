@@ -98,9 +98,10 @@ public class ORManagerImpl implements ORManager {
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
             ResultSet rs = ps.executeQuery();
+            ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong("id");
-                String firstName = rs.getString("first_name");
+                long personId = rs.getLong(rsMetaData.getColumnName(0));
+                String firstName = rs.getString(rsMetaData.getColumnName(1));
                 declaredFields[0].setAccessible(true);
                 declaredFields[0].set(objectToFind, personId);
                 declaredFields[1].setAccessible(true);
@@ -114,26 +115,33 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
-        List<Object> records = new ArrayList<>();
+        List<T> records = new ArrayList<>();
         try {
             Connection connection = dataSource.getConnection();
             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
             ResultSet rs = st.executeQuery();
-            ResultSetMetaData rsMetaData = rs.getMetaData();
-            int columns = rsMetaData.getColumnCount();
             while (rs.next()) {
-                for (int i = 1; i <= columns; i++) {
-                    records.add(rsMetaData.getColumnName(i) + ": " + rs.getString(rsMetaData.getColumnName(i)));
-                }
+                    Constructor<T> objDeclaretdConstructor =  cls.getDeclaredConstructor();
+                    objDeclaretdConstructor.setAccessible(true);
+                    T myObj = objDeclaretdConstructor.newInstance();
+                    Field[] fields = myObj.getClass().getDeclaredFields();
+                    fields[1].setAccessible(true);
+                    fields[1].set(myObj, rs.getLong(1));
+                    fields[2].setAccessible(true);
+                    fields[2].set(myObj,rs.getString(2));
+                    records.add(myObj);
             }
-        } catch (SQLException e) {
+            log.info(records.toString());
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return (List<T>) records;
+        return records;
     }
 
     @Override
     public <T> T update(T o) {
+        Field[] fields = o.getClass().getDeclaredFields();
+
         return null;
     }
 
