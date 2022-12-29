@@ -1,5 +1,6 @@
 package org.example.persistence.sql;
 
+import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.AnnotationUtils;
 
 import java.lang.reflect.Field;
@@ -24,7 +25,9 @@ public class SQLDialect {
         List<String> columnNames = new ArrayList<>();
         List<String> parameters = new ArrayList<>();
         for (Field declaredField : declaredFields) {
-            columnNames.add(declaredField.getName());
+           if(!declaredField.isAnnotationPresent(Id.class)) {
+               columnNames.add(AnnotationUtils.getColumnName(declaredField));
+           }
         }
         for (int i = 0; i < columnNames.size(); i++) {
             parameters.add("?");
