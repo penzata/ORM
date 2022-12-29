@@ -4,12 +4,6 @@ import org.example.persistence.utilities.AnnotationUtils;
 
 public class SQLDialect {
     public static final String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
-    public static final String SQL_INSERT_STUDENT = """
-            INSERT INTO STUDENTS (first_name) values(?);
-            """;
-    public static final String SQL_FIND_BY_ID_STUDENT = """
-            SELECT * FROM STUDENTS WHERE id=?
-            """;
     public static final String SQL_FIND_ALL = """
             SELECT * FROM
             """;
