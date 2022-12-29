@@ -109,7 +109,7 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        return Optional.of(objectToFind);
+        return Optional.ofNullable(objectToFind);
     }
 
     @Override
