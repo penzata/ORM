@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -24,17 +25,22 @@ class ORManagerImplTest {
     ORManager manager;
     HikariDataSource dataSource;
     Connection connection;
+    PreparedStatement ps;
     Table createdStudentsTable;
     Student student1;
 
     @AfterEach
     void tearDown() throws SQLException {
-        connection.prepareStatement("DROP TABLE students").executeUpdate();
+        ps = connection.prepareStatement("DROP TABLE students");
+        ps.executeUpdate();
         if (connection != null) {
             connection.close();
         }
         if (dataSource != null) {
             dataSource.close();
+        }
+        if (ps != null) {
+            ps.close();
         }
     }
 
@@ -136,6 +142,15 @@ class ORManagerImplTest {
                 .hasColumnName("trial_first_name");
 
         output(table).toConsole();
+    }
+
+    @Test
+    void delete() {
+        Student savedStudent = manager.save(new Student("Huhg"));
+
+        manager.delete(savedStudent);
+
+
     }
 
 }
