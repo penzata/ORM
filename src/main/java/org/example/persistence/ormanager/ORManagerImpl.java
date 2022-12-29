@@ -125,10 +125,10 @@ public class ORManagerImpl implements ORManager {
                     objDeclaretdConstructor.setAccessible(true);
                     T myObj = objDeclaretdConstructor.newInstance();
                     Field[] fields = myObj.getClass().getDeclaredFields();
+                    fields[0].setAccessible(true);
+                    fields[0].set(myObj, rs.getLong(1));
                     fields[1].setAccessible(true);
-                    fields[1].set(myObj, rs.getLong(1));
-                    fields[2].setAccessible(true);
-                    fields[2].set(myObj,rs.getString(2));
+                    fields[1].set(myObj,rs.getString(2));
                     records.add(myObj);
             }
             log.info(records.toString());
