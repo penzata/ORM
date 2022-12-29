@@ -61,7 +61,7 @@ class ORManagerImplTest {
 
         assertThat(savedStudent.getId()).isNotNull();
 
-        output(createdStudentsTable).toConsole();
+        output(createdStudentsTable).toFile("tableFromTests");
     }
 
     @Test
@@ -72,7 +72,7 @@ class ORManagerImplTest {
         assertThat(savedStudent.getId()).isPositive();
         assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
 
-        output(createdStudentsTable).toConsole();
+        output(createdStudentsTable).toFile("tableFromTest");
     }
 
     @Test
@@ -84,7 +84,7 @@ class ORManagerImplTest {
 
         assertThat(createdStudentsTable).hasNumberOfRows(1);
 
-        output(createdStudentsTable).toConsole();
+        output(createdStudentsTable).toFile("tableFromTests");
     }
 
     @Test
@@ -117,7 +117,7 @@ class ORManagerImplTest {
                 .value().isEqualTo(2)
                 .value().isEqualTo("Petkan");
 
-        output(createdStudentsTable).toConsole();
+        output(createdStudentsTable).toFile("tableFromTests");
     }
 
     @Test
@@ -141,7 +141,7 @@ class ORManagerImplTest {
         assertThat(table).column(1)
                 .hasColumnName("trial_first_name");
 
-        output(table).toConsole();
+        output(table).toFile("tableFromTests");
     }
 
     @Test
