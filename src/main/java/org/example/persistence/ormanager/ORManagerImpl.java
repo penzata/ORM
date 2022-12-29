@@ -84,7 +84,7 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        T objectToFind;
+        T objectToFind = null;
         Field[] declaredFields = cls.getDeclaredFields();
         try {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
@@ -92,7 +92,7 @@ public class ORManagerImpl implements ORManager {
             objectToFind = declaredConstructor.newInstance();
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
                  InvocationTargetException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
@@ -100,7 +100,7 @@ public class ORManagerImpl implements ORManager {
             ResultSet rs = ps.executeQuery();
             ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong(rsMetaData.getColumnName(1));
+                long personId = rs.getLong(1);
                 String firstName = rs.getString(2);
                 declaredFields[0].setAccessible(true);
                 declaredFields[0].set(objectToFind, personId);
@@ -110,7 +110,6 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        log.info(String.valueOf(Optional.of(objectToFind)));
         return Optional.of(objectToFind);
     }
 
