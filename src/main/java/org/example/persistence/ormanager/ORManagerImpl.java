@@ -66,7 +66,6 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        log.info("created object: " + o.toString());
         SerializationUtil.serialize(o);
         return o;
     }
@@ -74,10 +73,10 @@ public class ORManagerImpl implements ORManager {
     private <T> boolean checkIfObjectExists(T o) {
         boolean exists = false;
         try {
-            Field id = o.getClass().getDeclaredField("id");
-            id.setAccessible(true);
-            exists = id.get(o) != null;
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+            Field[] declaredFields = o.getClass().getDeclaredFields();
+            declaredFields[0].setAccessible(true);
+            exists = declaredFields[0].get(o) != null;
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         return exists;
@@ -127,7 +126,6 @@ public class ORManagerImpl implements ORManager {
                     records.add(rsMetaData.getColumnName(i) + ": " + rs.getString(rsMetaData.getColumnName(i)));
                 }
             }
-            log.info(records.toString());
         } catch (SQLException e) {
             e.printStackTrace();
         }
