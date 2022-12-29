@@ -61,12 +61,7 @@ public class Utils {
      * @throws SQLException
      */
     public static Connection getConnection() throws SQLException {
-        try {
-            return dataSource.getConnection();
-        } catch (NullPointerException e) {
-            log.error("Need to initialize ORManager first to set the data source.");
-        }
-        return null;
+        return dataSource != null ? dataSource.getConnection() : null;
     }
 
     public static ORManager withDataSource(DataSource dataSource) {
