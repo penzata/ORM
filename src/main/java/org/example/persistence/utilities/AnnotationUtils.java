@@ -31,13 +31,13 @@ public class AnnotationUtils {
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
         for (Field declaredField : clss.getDeclaredFields()) {
-            String fieldName = declaredField.getType().getSimpleName();
+            String fieldTypeName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
             String constraints =
                     (isUnique(declaredField) ? " UNIQUE " : "") +
                             (canBeNull(declaredField) ? "" : " NOT NULL");
             String idTag = sqlIdStatement(declaredField);
-            switch (fieldName) {
+            switch (fieldTypeName) {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + idTag + constraints);
                 case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idTag + constraints);
