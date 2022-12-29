@@ -149,7 +149,7 @@ class ORManagerImplTest {
     @Test
     void delete() {
         Student savedStudent = manager.save(new Student("Laura"));
-
+        int startCount = manager.recordsCount(Student.class);
         manager.delete(savedStudent);
 
 

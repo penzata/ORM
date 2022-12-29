@@ -153,4 +153,8 @@ public class ORManagerImpl implements ORManager {
         return false;
     }
 
+    @Override
+    public int recordsCount(Class<?> clss) {
+            return findAll(clss).size();
+    }
 }
