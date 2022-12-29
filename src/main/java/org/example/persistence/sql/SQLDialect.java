@@ -27,10 +27,8 @@ public class SQLDialect {
         for (Field declaredField : declaredFields) {
            if(!declaredField.isAnnotationPresent(Id.class)) {
                columnNames.add(AnnotationUtils.getColumnName(declaredField));
+               parameters.add("?");
            }
-        }
-        for (int i = 0; i < columnNames.size(); i++) {
-            parameters.add("?");
         }
         String tableName = AnnotationUtils.getTableName(clss);
 
