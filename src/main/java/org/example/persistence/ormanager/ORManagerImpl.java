@@ -1,9 +1,7 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.domain.model.Student;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.utilities.AnnotationUtils;
 import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
@@ -17,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
+import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
 import static org.example.persistence.utilities.AnnotationUtils.getTableName;
 
 
@@ -31,29 +30,17 @@ public class ORManagerImpl implements ORManager {
     @Override
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
+            List<String> columnNames = new ArrayList<>();
+            String tableName = getTableName(cls);
             if (cls.isAnnotationPresent(Entity.class)) {
-                String tableName = getTableName(cls);
-
-                Field[] declaredFields = cls.getDeclaredFields();
-                List<String> columnNames = new ArrayList<>();
-
-                for (Field field : declaredFields) {
-                    Class<?> fieldType = field.getType();
-                    if (!AnnotationUtils.getIdField(cls).equals("")) {
-                        String name = field.getName();
-                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, true, false);
-                    } else {
-                        String name = AnnotationUtils.getColumnName(field);
-                        AnnotationUtils.sqlColumnDeclaration(columnNames, fieldType, name, AnnotationUtils.isUnique(field), AnnotationUtils.canBeNull(field));
-                    }
-                }
+                columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
                 log.atDebug().log(sqlCreateTable);
-                try (var prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
+                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             }
         }
@@ -67,19 +54,18 @@ public class ORManagerImpl implements ORManager {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
-            declaredFields[2].setAccessible(true);
-            ps.setString(1, declaredFields[2].get(o).toString());
+            declaredFields[1].setAccessible(true);
+            ps.setString(1, declaredFields[1].get(o).toString());
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
-                declaredFields[1].setAccessible(true);
+                declaredFields[0].setAccessible(true);
                 long generatedId = rs.getLong(1);
-                declaredFields[1].set(o, generatedId);
+                declaredFields[0].set(o, generatedId);
             }
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        log.info("created object: " + o.toString());
         SerializationUtil.serialize(o);
         return o;
     }
@@ -87,10 +73,10 @@ public class ORManagerImpl implements ORManager {
     private <T> boolean checkIfObjectExists(T o) {
         boolean exists = false;
         try {
-            Field id = o.getClass().getDeclaredField("id");
-            id.setAccessible(true);
-            exists = id.get(o) != null;
-        } catch (IllegalAccessException | NoSuchFieldException e) {
+            Field[] declaredFields = o.getClass().getDeclaredFields();
+            declaredFields[0].setAccessible(true);
+            exists = declaredFields[0].get(o) != null;
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
         return exists;
@@ -104,7 +90,8 @@ public class ORManagerImpl implements ORManager {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
             declaredConstructor.setAccessible(true);
             objectToFind = declaredConstructor.newInstance();
-        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
+                 InvocationTargetException e) {
             throw new RuntimeException(e);
         }
         try (Connection connection = dataSource.getConnection();
@@ -113,12 +100,12 @@ public class ORManagerImpl implements ORManager {
             ResultSet rs = ps.executeQuery();
             ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong(rsMetaData.getColumnName(1));
-                String firstName = rs.getString(rsMetaData.getColumnName(2));
+                long personId = rs.getLong(rsMetaData.getColumnName(0));
+                String firstName = rs.getString(rsMetaData.getColumnName(1));
+                declaredFields[0].setAccessible(true);
+                declaredFields[0].set(objectToFind, personId);
                 declaredFields[1].setAccessible(true);
-                declaredFields[1].set(objectToFind, personId);
-                declaredFields[2].setAccessible(true);
-                declaredFields[2].set(objectToFind, firstName);
+                declaredFields[1].set(objectToFind, firstName);
             }
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();

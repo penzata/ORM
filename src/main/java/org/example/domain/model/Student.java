@@ -13,12 +13,10 @@ import java.io.Serializable;
 @Entity
 @Table(name = "students")
 public class Student implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 42L;
     @Id
-    @Column(name = "id", unique = true)
+    @Column(name = "id")
     private Long id;
-    @Column(name = "first_name", nullable = false, unique = true)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
     public Student(String firstName) {

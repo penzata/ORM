@@ -109,14 +109,14 @@ class AnnotationsTest {
 
     @Test
     void WhenIdIsAbsentThenReturnEmptyString() {
-        String idField = AnnotationUtils.getIdField(WithoutAnno.class);
+        String idField = AnnotationUtils.getIdFieldName(WithoutAnno.class);
 
         assertEquals("", idField);
     }
 
     @Test
     void WhenIdIsPresentThenReturnIt() {
-        String idField = AnnotationUtils.getIdField(WithAnno.class);
+        String idField = AnnotationUtils.getIdFieldName(WithAnno.class);
 
         assertNotNull(idField);
     }

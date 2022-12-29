@@ -7,7 +7,7 @@ import org.example.persistence.annotations.Table;
 import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AnnotationUtils {
@@ -28,6 +28,27 @@ public class AnnotationUtils {
         }
     }
 
+    public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
+        List<String> columnNames = new ArrayList<>();
+        for (Field declaredField : clss.getDeclaredFields()) {
+            String fieldName = declaredField.getType().getSimpleName();
+            String columnName = getColumnName(declaredField);
+            String constraints =
+                    (isUnique(declaredField) ? " UNIQUE " : "") +
+                            (canBeNull(declaredField) ? "" : " NOT NULL");
+            String idTag = sqlIdStatement(declaredField);
+            switch (fieldName) {
+                case "String" -> columnNames.add(columnName + SQLDialect.STRING + idTag + constraints);
+                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
+                case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idTag + constraints);
+                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idTag + constraints);
+                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idTag + constraints);
+                default -> columnNames.add("");
+            }
+        }
+        return columnNames;
+    }
+
     public static String getColumnName(Field field) {
         if (field.isAnnotationPresent(Column.class)) {
             String fieldName = field.getAnnotation(Column.class).name();
@@ -35,17 +56,6 @@ public class AnnotationUtils {
         } else {
             return field.getName();
         }
-    }
-
-    public static String getIdField(Class<?> clss) {
-        String result = "";
-        for (Field field : clss.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Id.class)) {
-                result = field.getName();
-                break;
-            }
-        }
-        return result;
     }
 
     public static boolean isUnique(Field field) {
@@ -56,25 +66,18 @@ public class AnnotationUtils {
         return field.getAnnotation(Column.class).nullable();
     }
 
-    //todo method needs to be rewritten not to work only with isolated case
-    //todo maybe consider putting all field methods under one FieldInfo class
-    public static void sqlColumnDeclaration(List<String> columnNames, Class<?> fieldType, String name, boolean isUnique, boolean canBeNull) {
-        String constraints =
-                (isUnique ? " UNIQUE " : "") +
-                        (canBeNull ? "" : " NOT NULL");
-
-        if (fieldType == Long.class) {
-            columnNames.add(name + SQLDialect.ID);
-        }
-        if (fieldType == String.class) {
-            columnNames.add(name + SQLDialect.STRING + constraints);
-        } else if (fieldType == LocalDate.class) {
-            columnNames.add(name + SQLDialect.DATETIME + constraints);
-        } else if (fieldType == int.class) {
-            columnNames.add(name + SQLDialect.INT + constraints);
-        } else if (fieldType == boolean.class) {
-            columnNames.add(name + SQLDialect.BOOLEAN + constraints);
-        }
+    private static String sqlIdStatement(Field declaredField) {
+        return declaredField.isAnnotationPresent(Id.class) ? SQLDialect.ID : "";
     }
 
+    public static String getIdFieldName(Class<?> clss) {
+        String result = "";
+        for (Field field : clss.getDeclaredFields()) {
+            if (field.isAnnotationPresent(Id.class)) {
+                result = field.getName();
+                break;
+            }
+        }
+        return result;
+    }
 }

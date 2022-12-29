@@ -13,8 +13,8 @@ public class SQLDialect {
     public static final String SQL_FIND_ALL = """
             SELECT * FROM
             """;
-    //todo need to separate type from primary key so that any type can be primary key
-    public static final String ID = " BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
+
+    public static final String ID = " GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
     public static final String STRING = " VARCHAR(255)";
     public static final String DATETIME = " DATETIME";
     public static final String INT = " INT";
@@ -23,11 +23,11 @@ public class SQLDialect {
 
     public static String getTableNameForInsert(Class<?> clss) {
         String tableName = AnnotationUtils.getTableName(clss);
-        return tableName.equals("students") ? SQL_INSERT_STUDENT : "";
+        return String.format("INSERT INTO %s (first_name) values(?)", tableName);
     }
 
     public static String getTableNameForSelect(Class<?> clss) {
         String tableName = AnnotationUtils.getTableName(clss);
-        return tableName.equals("students") ? SQL_FIND_BY_ID_STUDENT : "";
+        return String.format("SELECT * FROM %s WHERE id=?", tableName);
     }
 }

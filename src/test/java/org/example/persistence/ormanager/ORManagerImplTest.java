@@ -2,14 +2,18 @@ package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.assertj.db.type.Table;
+import org.assertj.db.type.ValueType;
 import org.example.domain.model.Student;
+import org.example.persistence.annotations.Column;
+import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -18,45 +22,32 @@ import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
 class ORManagerImplTest {
-    //language=H2
-    private static final String STUDENTS_TABLE = """
-            CREATE TABLE IF NOT EXISTS students
-            (
-            id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-            first_name VARCHAR(30) NOT NULL
-            )
-            """;
     static ORManager manager;
     static HikariDataSource dataSource;
     static Connection connection;
-    static PreparedStatement createTableStmt;
-    Table createdTable;
+    static Table createdTable;
     Student student1;
+
+    @BeforeAll
+    static void init() {
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
+        manager.register(Student.class);
+        createdTable = new Table(dataSource, "students");
+    }
 
     @AfterEach
     void tearDown() throws SQLException {
         if (connection != null) {
             connection.close();
         }
-        if (createTableStmt != null) {
-            createTableStmt.close();
-        }
-        if (dataSource != null) {
-            dataSource.close();
-        }
     }
 
     @BeforeEach
     void setUp() throws SQLException {
-        dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:test");
-        manager = Utils.withDataSource(dataSource);
         connection = dataSource.getConnection();
-        createTableStmt = connection.prepareStatement(STUDENTS_TABLE);
-        createTableStmt.execute();
-
         student1 = new Student("Johny");
-        createdTable = new Table(dataSource, "students");
     }
 
     @Test
@@ -111,6 +102,30 @@ class ORManagerImplTest {
         manager.save(new Student("Ivan"));
         manager.save(new Student("Petkan"));
         manager.findAll(Student.class);
+    }
+
+    @Test
+    void WhenRegisterAnEntityReturnATableMatchingItsFields() {
+        @Entity
+        @org.example.persistence.annotations.Table(name = "trial_table")
+        class TrialTable {
+            @Id
+            @Column(name = "trial_id")
+            int trialId;
+            @Column(name = "trial_first_name", nullable = false)
+            String trialFirstName;
+            @Column(nullable = false)
+            boolean under18;
+        }
+        Table table = new Table(dataSource, "trial_table");
+
+        manager.register(TrialTable.class);
+
+        assertThat(table).hasNumberOfColumns(3);
+        assertThat(table).column(1)
+                        .hasColumnName("trial_first_name");
+
+        output(table).toConsole();
     }
 
 }

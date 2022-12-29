@@ -30,7 +30,7 @@ class SerializationUtilTest {
     }
 
     @Test
-    void WhenSerializeAndTheDeserializeObjectThenReturnThanTheyAreEquals() {
+    void WhenSerializeAndTheDeserializeObjectThenReturnThatTheyAreEqual() {
         Student student = new Student("Jack");
         student.setId(33L);
         Student student2 = new Student("Black");
