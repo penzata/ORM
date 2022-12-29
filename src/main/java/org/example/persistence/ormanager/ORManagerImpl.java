@@ -52,7 +52,7 @@ public class ORManagerImpl implements ORManager {
             return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(getTableAndColumnNamesForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             declaredFields[1].setAccessible(true);
             ps.setString(1, declaredFields[1].get(o).toString());
@@ -64,7 +64,7 @@ public class ORManagerImpl implements ORManager {
                 declaredFields[0].set(o, generatedId);
             }
         } catch (SQLException | IllegalAccessException e) {
-            e.printStackTrace();
+            log.error("SQL & IllegalAccessException exceptions", e);
         }
         SerializationUtil.serialize(o);
         return o;
