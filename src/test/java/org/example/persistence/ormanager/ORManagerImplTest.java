@@ -2,19 +2,18 @@ package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.assertj.db.type.Table;
-import org.assertj.db.type.ValueType;
 import org.example.domain.model.Student;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,31 +21,31 @@ import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
 
 class ORManagerImplTest {
-    static ORManager manager;
-    static HikariDataSource dataSource;
-    static Connection connection;
-    static Table createdTable;
+    ORManager manager;
+    HikariDataSource dataSource;
+    Connection connection;
+    Table createdStudentsTable;
     Student student1;
-
-    @BeforeAll
-    static void init() {
-        dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:test");
-        manager = Utils.withDataSource(dataSource);
-        manager.register(Student.class);
-        createdTable = new Table(dataSource, "students");
-    }
 
     @AfterEach
     void tearDown() throws SQLException {
+        connection.prepareStatement("DROP TABLE students").executeUpdate();
         if (connection != null) {
             connection.close();
+        }
+        if (dataSource != null) {
+            dataSource.close();
         }
     }
 
     @BeforeEach
     void setUp() throws SQLException {
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
+        manager.register(Student.class);
         connection = dataSource.getConnection();
+        createdStudentsTable = new Table(dataSource, "students");
         student1 = new Student("Johny");
     }
 
@@ -55,7 +54,8 @@ class ORManagerImplTest {
         Student savedStudent = manager.save(student1);
 
         assertThat(savedStudent.getId()).isNotNull();
-        output(createdTable).toConsole();
+
+        output(createdStudentsTable).toConsole();
     }
 
     @Test
@@ -66,18 +66,19 @@ class ORManagerImplTest {
         assertThat(savedStudent.getId()).isPositive();
         assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
 
-        output(createdTable).toConsole();
+        output(createdStudentsTable).toConsole();
     }
 
     @Test
     void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
-        manager.save(student1);
-        manager.save(student1);
-        manager.save(student1);
+        Student st = new Student("Harry");
+        manager.save(st);
+        manager.save(st);
+        manager.save(st);
 
-        assertThat(createdTable).hasNumberOfRows(1);
+        assertThat(createdStudentsTable).hasNumberOfRows(1);
 
-        output(createdTable).toConsole();
+        output(createdStudentsTable).toConsole();
     }
 
     @Test
@@ -97,11 +98,20 @@ class ORManagerImplTest {
         assertThat(personToBeFound.get().getId()).isNull();
         assertThat(personToBeFound.get().getFirstName()).isNull();
     }
+
     @Test
-    void test(){
+    void WhenFindAllThenReturnAllSavedToDBObjects() {
         manager.save(new Student("Ivan"));
         manager.save(new Student("Petkan"));
-        manager.findAll(Student.class);
+
+        List<Student> allStudents = manager.findAll(Student.class);
+
+        assertThat(allStudents).hasSize(2);
+        assertThat(createdStudentsTable).row(1)
+                .value().isEqualTo(2)
+                .value().isEqualTo("Petkan");
+
+        output(createdStudentsTable).toConsole();
     }
 
     @Test
@@ -123,7 +133,7 @@ class ORManagerImplTest {
 
         assertThat(table).hasNumberOfColumns(3);
         assertThat(table).column(1)
-                        .hasColumnName("trial_first_name");
+                .hasColumnName("trial_first_name");
 
         output(table).toConsole();
     }
