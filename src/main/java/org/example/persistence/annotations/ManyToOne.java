@@ -9,5 +9,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManyToOne {
     Class targetEntity() default void.class;
+
+    String name() default "";
+
+    boolean nullable() default true;
+
     boolean optional() default true;
+
 }
