@@ -54,7 +54,7 @@ class ORManagerImplTest {
         manager.register(Student.class);
         connection = dataSource.getConnection();
         createdStudentsTable = new Table(dataSource, "students");
-        student1 = new Student("Johny");
+        student1 = new Student("Bob");
     }
 
     @Test
@@ -69,7 +69,7 @@ class ORManagerImplTest {
     @Test
     void CanSaveTwoStudentsToDatabaseAndReturnStudentsWithId() {
         Student savedStudent = manager.save(student1);
-        Student savedBeavis = manager.save(new Student("Beavis"));
+        Student savedBeavis = manager.save(new Student("Dale"));
 
         assertThat(savedStudent.getId()).isPositive();
         assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
@@ -79,7 +79,7 @@ class ORManagerImplTest {
 
     @Test
     void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
-        Student st = new Student("Harry");
+        Student st = new Student("Shelly");
         manager.save(st);
         manager.save(st);
         manager.save(st);
@@ -91,7 +91,7 @@ class ORManagerImplTest {
 
     @Test
     void canFindPersonById() {
-        Student savedStudent = manager.save(new Student("Dick"));
+        Student savedStudent = manager.save(new Student("Harry"));
 
         Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
 
@@ -148,7 +148,7 @@ class ORManagerImplTest {
 
     @Test
     void delete() {
-        Student savedStudent = manager.save(new Student("Huhg"));
+        Student savedStudent = manager.save(new Student("Laura"));
 
         manager.delete(savedStudent);
 
