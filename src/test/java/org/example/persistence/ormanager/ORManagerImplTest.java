@@ -21,6 +21,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.db.api.Assertions.assertThat;
 import static org.assertj.db.output.Outputs.output;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class ORManagerImplTest {
@@ -95,8 +97,7 @@ class ORManagerImplTest {
 
         Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
 
-        assertThat(foundStudent).isPresent();
-        assertThat(foundStudent.get().getId()).isEqualTo(savedStudent.getId());
+        assertThat(foundStudent).contains(savedStudent);
     }
 
     @Test
@@ -159,7 +160,30 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
+        boolean result = manager.delete(student1);
 
+        assertTrue(result);
+    }
+
+    @Test
+    void WhenDeletingRecordThatDoesntExistsThenReturnFalse() {
+        Student notSavedInDBStudent = new Student("Andi");
+
+        boolean result = manager.delete(notSavedInDBStudent);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void canDeleteMultipleRecords() {
+        Student catherine = manager.save(new Student("Catherine"));
+        Student audrey = manager.save(new Student("Audrey"));
+        int startCount = manager.recordsCount(Student.class);
+
+        manager.delete(catherine, audrey);
+        int endCount = manager.recordsCount(Student.class);
+
+        assertThat(endCount).isLessThanOrEqualTo(startCount - 2);
     }
 
 }
