@@ -113,6 +113,23 @@ public class ORManagerImpl implements ORManager {
     }
 
     @Override
+    public <T> T update(T o) {
+        Field[] fields = o.getClass().getDeclaredFields();
+
+        return null;
+    }
+
+    @Override
+    public <T> T refresh(T o) {
+        return null;
+    }
+
+    @Override
+    public int recordsCount(Class<?> clss) {
+        return findAll(clss).size();
+    }
+
+    @Override
     public <T> List<T> findAll(Class<T> cls) {
         List<T> records = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
@@ -137,24 +154,14 @@ public class ORManagerImpl implements ORManager {
     }
 
     @Override
-    public <T> T update(T o) {
-        Field[] fields = o.getClass().getDeclaredFields();
-
-        return null;
-    }
-
-    @Override
-    public <T> T refresh(T o) {
-        return null;
+    public void delete(Object... objects) {
+        for (Object object : objects) {
+            delete(object);
+        }
     }
 
     @Override
     public boolean delete(Object o) {
         return false;
-    }
-
-    @Override
-    public int recordsCount(Class<?> clss) {
-            return findAll(clss).size();
     }
 }
