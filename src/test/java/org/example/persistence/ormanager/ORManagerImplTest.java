@@ -147,11 +147,18 @@ class ORManagerImplTest {
     }
 
     @Test
-    void delete() {
+    void WhenDeletingFromRecordsThenReturnRecordsCountWithOneRecordLess() {
         Student savedStudent = manager.save(new Student("Laura"));
         int startCount = manager.recordsCount(Student.class);
-        manager.delete(savedStudent);
 
+        manager.delete(savedStudent);
+        int endCount = manager.recordsCount(Student.class);
+
+        assertThat(endCount).isEqualTo(startCount - 1);
+    }
+
+    @Test
+    void WhenDeletingRecordThenReturnTrue() {
 
     }
 
