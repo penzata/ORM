@@ -208,10 +208,14 @@ class ORManagerImplTest {
     @Test
     void canUpdateRecord() {
         Student savedStudent = manager.save(new Student("Donna"));
-        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        Student returnedStudent = manager.findById(savedStudent.getId(), Student.class).get();
 
         savedStudent.setFirstName("Dina");
         manager.update(savedStudent);
+        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+
+        assertThat(foundStudent.getFirstName()).isNotEqualTo(returnedStudent.getFirstName());
+        assertThat(foundStudent).usingRecursiveComparison().isNotEqualTo(returnedStudent);
     }
 
 }
