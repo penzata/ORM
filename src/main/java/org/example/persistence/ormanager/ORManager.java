@@ -28,4 +28,6 @@ public interface ORManager {
     boolean delete(Object o);
 
     public int recordsCount(Class<?> clss);
+
+    void delete(Object... objects);
 }
