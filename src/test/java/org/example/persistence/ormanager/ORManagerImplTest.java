@@ -186,4 +186,32 @@ class ORManagerImplTest {
         assertThat(endCount).isLessThanOrEqualTo(startCount - 2);
     }
 
+    @Test
+    void WhenUpdatingRecordAndFindItByIdThenReturnTheUpdatedRecord() {
+        Student savedStudent = manager.save(new Student("Donna"));
+        System.out.println("1. " + savedStudent);
+        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        System.out.println("2. " + foundStudent);
+
+        foundStudent.setFirstName("Don");
+        System.out.println("3. " + foundStudent);
+        manager.update(foundStudent);
+        System.out.println("4. " + foundStudent);
+
+        Student foundUpdatedStudent = manager.findById(foundStudent.getId(), Student.class).get();
+        System.out.println("5. " + foundUpdatedStudent);
+
+        assertThat(foundUpdatedStudent.getFirstName()).isEqualTo(foundStudent.getFirstName());
+        assertThat(foundUpdatedStudent).usingRecursiveComparison().isEqualTo(foundStudent);
+    }
+
+    @Test
+    void canUpdateRecord() {
+        Student savedStudent = manager.save(new Student("Donna"));
+        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+
+        savedStudent.setFirstName("Dina");
+        manager.update(savedStudent);
+    }
+
 }
