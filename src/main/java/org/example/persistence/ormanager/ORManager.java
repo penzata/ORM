@@ -1,7 +1,6 @@
 package org.example.persistence.ormanager;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,4 +27,7 @@ public interface ORManager {
     // return true if successfully deleted
     boolean delete(Object o);
 
+    public int recordsCount(Class<?> clss);
+
+    void delete(Object... objects);
 }

@@ -30,7 +30,7 @@ public class ORManagerImpl implements ORManager {
     @Override
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
-            List<String> columnNames = new ArrayList<>();
+            List<String> columnNames;
             String tableName = getTableName(cls);
             if (cls.isAnnotationPresent(Entity.class)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
@@ -52,7 +52,7 @@ public class ORManagerImpl implements ORManager {
             return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(getTableNameForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = connection.prepareStatement(getTableAndColumnNamesForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             declaredFields[1].setAccessible(true);
             ps.setString(1, declaredFields[1].get(o).toString());
@@ -64,7 +64,7 @@ public class ORManagerImpl implements ORManager {
                 declaredFields[0].set(o, generatedId);
             }
         } catch (SQLException | IllegalAccessException e) {
-            e.printStackTrace();
+            log.error("SQL & IllegalAccessException exceptions", e);
         }
         SerializationUtil.serialize(o);
         return o;
@@ -84,7 +84,7 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        T objectToFind;
+        T objectToFind = null;
         Field[] declaredFields = cls.getDeclaredFields();
         try {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
@@ -92,15 +92,14 @@ public class ORManagerImpl implements ORManager {
             objectToFind = declaredConstructor.newInstance();
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
                  InvocationTargetException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
             ResultSet rs = ps.executeQuery();
-            ResultSetMetaData rsMetaData = rs.getMetaData();
             while (rs.next()) {
-                long personId = rs.getLong(rsMetaData.getColumnName(1));
+                long personId = rs.getLong(1);
                 String firstName = rs.getString(2);
                 declaredFields[0].setAccessible(true);
                 declaredFields[0].set(objectToFind, personId);
@@ -110,39 +109,11 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        log.info(String.valueOf(Optional.of(objectToFind)));
-        return Optional.of(objectToFind);
-    }
-
-    @Override
-    public <T> List<T> findAll(Class<T> cls) {
-        List<T> records = new ArrayList<>();
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls));
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                    Constructor<T> objDeclaretdConstructor =  cls.getDeclaredConstructor();
-                    objDeclaretdConstructor.setAccessible(true);
-                    T myObj = objDeclaretdConstructor.newInstance();
-                    Field[] fields = myObj.getClass().getDeclaredFields();
-                    fields[0].setAccessible(true);
-                    fields[0].set(myObj, rs.getLong(1));
-                    fields[1].setAccessible(true);
-                    fields[1].set(myObj,rs.getString(2));
-                    records.add(myObj);
-            }
-            log.info(records.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return records;
+        return Optional.ofNullable(objectToFind);
     }
 
     @Override
     public <T> T update(T o) {
-        Field[] fields = o.getClass().getDeclaredFields();
-
         return null;
     }
 
@@ -152,8 +123,43 @@ public class ORManagerImpl implements ORManager {
     }
 
     @Override
+    public int recordsCount(Class<?> clss) {
+        return findAll(clss).size();
+    }
+
+    @Override
+    public <T> List<T> findAll(Class<T> cls) {
+        List<T> records = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                Constructor<T> objDeclaredConstructor = cls.getDeclaredConstructor();
+                objDeclaredConstructor.setAccessible(true);
+                T myObj = objDeclaredConstructor.newInstance();
+                Field[] fields = myObj.getClass().getDeclaredFields();
+                fields[0].setAccessible(true);
+                fields[0].set(myObj, rs.getLong(1));
+                fields[1].setAccessible(true);
+                fields[1].set(myObj, rs.getString(2));
+                records.add(myObj);
+            }
+            log.info("all records: {}", records);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return records;
+    }
+
+    @Override
+    public void delete(Object... objects) {
+        for (Object object : objects) {
+            delete(object);
+        }
+    }
+
+    @Override
     public boolean delete(Object o) {
         return false;
     }
-
 }

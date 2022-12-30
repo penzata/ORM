@@ -10,6 +10,7 @@ public class Main {
         ORManager orManager = Utils.withPropertiesFrom(path);
 
         orManager.register(Student.class);
+        orManager.save(new Student("Neo"));
         orManager.findById(2L, Student.class);
         orManager.findAll(Student.class);
     }
