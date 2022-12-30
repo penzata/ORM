@@ -114,8 +114,6 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T update(T o) {
-        Field[] fields = o.getClass().getDeclaredFields();
-
         return null;
     }
 
