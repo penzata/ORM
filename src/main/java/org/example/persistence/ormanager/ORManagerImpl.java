@@ -30,7 +30,7 @@ public class ORManagerImpl implements ORManager {
     @Override
     public void register(Class... entityClasses) {
         for (Class<?> cls : entityClasses) {
-            List<String> columnNames = new ArrayList<>();
+            List<String> columnNames;
             String tableName = getTableName(cls);
             if (cls.isAnnotationPresent(Entity.class)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
