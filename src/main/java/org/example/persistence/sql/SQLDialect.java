@@ -20,21 +20,24 @@ public class SQLDialect {
     public static final String LONG = " BIGINT";
     public static final String BOOLEAN = " BOOLEAN";
 
+    private SQLDialect() {
+    }
+
     public static String getTableAndColumnNamesForInsert(Class<?> clss) {
         Field[] declaredFields = clss.getDeclaredFields();
         List<String> columnNames = new ArrayList<>();
         List<String> parameters = new ArrayList<>();
         for (Field declaredField : declaredFields) {
-           if(!declaredField.isAnnotationPresent(Id.class)) {
-               columnNames.add(AnnotationUtils.getColumnName(declaredField));
-               parameters.add("?");
-           }
+            if (!declaredField.isAnnotationPresent(Id.class)) {
+                columnNames.add(AnnotationUtils.getColumnName(declaredField));
+                parameters.add("?");
+            }
         }
         String tableName = AnnotationUtils.getTableName(clss);
 
         return String.format("INSERT INTO %s (%s) values(%s)"
                 , tableName, String.join(", ", columnNames)
-        , String.join(", ", parameters));
+                , String.join(", ", parameters));
     }
 
     public static String getTableNameForSelect(Class<?> clss) {
