@@ -1,6 +1,7 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.utilities.SerializationUtil;
 
@@ -40,7 +41,7 @@ public class ORManagerImpl implements ORManager {
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                   log.error("There's some problem with the database access", e);
                 }
             }
         }
@@ -63,8 +64,10 @@ public class ORManagerImpl implements ORManager {
                 long generatedId = rs.getLong(1);
                 declaredFields[0].set(o, generatedId);
             }
-        } catch (SQLException | IllegalAccessException e) {
-            log.error("SQL & IllegalAccessException exceptions", e);
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
         }
         SerializationUtil.serialize(o);
         return o;
@@ -77,7 +80,7 @@ public class ORManagerImpl implements ORManager {
             declaredFields[0].setAccessible(true);
             exists = declaredFields[0].get(o) != null;
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            ExceptionHandler.illegalAccess(e);
         }
         return exists;
     }
@@ -90,10 +93,10 @@ public class ORManagerImpl implements ORManager {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
             declaredConstructor.setAccessible(true);
             objectToFind = declaredConstructor.newInstance();
-        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException |
-                 InvocationTargetException e) {
-            e.printStackTrace();
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            ExceptionHandler.newInstance(e);
         }
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
             ps.setLong(1, (Long) id);
@@ -106,8 +109,10 @@ public class ORManagerImpl implements ORManager {
                 declaredFields[1].setAccessible(true);
                 declaredFields[1].set(objectToFind, firstName);
             }
-        } catch (SQLException | IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
         }
         return Optional.ofNullable(objectToFind);
     }
