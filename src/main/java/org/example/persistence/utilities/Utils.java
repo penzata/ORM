@@ -22,8 +22,8 @@ public class Utils {
     private Utils() {
     }
 
-    public static ORManager withPropertiesFrom(String filename) {
-        Path path = Path.of(filename);
+    public static ORManager withPropertiesFrom(String fileName) {
+        Path path = Path.of(fileName);
         Properties properties = readProperties(path);
 
         String jdbcUrl = properties.getProperty("jdbc-url");
@@ -33,7 +33,7 @@ public class Utils {
         return new ORManagerImpl(createDataSource(jdbcUrl, jdbcUser, jdbcPass));
     }
 
-    public static Properties readProperties(Path file) {
+    private static Properties readProperties(Path file) {
         Properties result = new Properties();
         try (InputStream inputStream = Utils.class.getClassLoader().getResourceAsStream(file.toString())) {
             result.load(inputStream);
