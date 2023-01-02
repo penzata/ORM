@@ -12,27 +12,27 @@ public class ExceptionHandler {
     }
 
     public static void sql(SQLException ex) {
-        log.error("There's some problem with the database access", ex);
+        log.error("There's some problem with the database access:", ex);
     }
 
     public static void illegalAccess(ReflectiveOperationException ex) {
-        log.error("Either the underlying field/method is inaccessible" +
+        log.atError().log("Either the underlying field/method is inaccessible" +
                 " or specified object argument is not an instance of the class" +
-                " or interface declaring the underlying field/method", ex);
+                " or interface declaring the underlying field/method:", ex);
     }
 
     public static void newInstance(ReflectiveOperationException ex) {
-        log.error("There's some problem initializing a new instance of the constructor's declaring class", ex);
+        log.atError().log("There's some problem initializing a new instance of the constructor's declaring class:", ex);
     }
 
     public static void illegalAccessOrNewInstance(ReflectiveOperationException ex) {
-        log.error("Either the underlying field/method is inaccessible" +
+        log.atError().log("Either the underlying field/method is inaccessible" +
                 " or specified object argument is not an instance of the class" +
                 " or interface declaring the underlying field/method " +
-                "or there's some problem initializing a new instance of the constructor's declaring class", ex);
+                "\nor there's some problem initializing a new instance of the constructor's declaring class:", ex);
     }
 
     public static void inputOutput(IOException ex) {
-        log.error("An error occurred when reading from the input stream.", ex);
+        log.atError().log("An error occurred when reading from the input stream:", ex);
     }
 }
