@@ -3,6 +3,7 @@ package org.example.persistence.utilities;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.ormanager.ORManagerImpl;
 
@@ -38,11 +39,12 @@ public class Utils {
             result.load(inputStream);
             return result;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            ExceptionHandler.inputOutput(e);
         }
+        return result;
     }
 
-    static DataSource createDataSource(String url, String user, String password) {
+    private static DataSource createDataSource(String url, String user, String password) {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(url);
         config.setUsername(user);
@@ -58,7 +60,8 @@ public class Utils {
 
     /**
      * @return connection from the datasource, provided by the created ORM Manager.
-     * @throws SQLException Need to initialize ORManager first to set the data source.
+     * @throws SQLException
+     * Need to initialize ORManager first to set this data source or the connection will be null.
      */
     public static Connection getConnection() throws SQLException {
         return dataSource != null ? dataSource.getConnection() : null;
@@ -67,5 +70,4 @@ public class Utils {
     public static ORManager withDataSource(DataSource dataSource) {
         return new ORManagerImpl(dataSource);
     }
-
 }
