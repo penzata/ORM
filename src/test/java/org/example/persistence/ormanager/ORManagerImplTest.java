@@ -216,7 +216,6 @@ class ORManagerImplTest {
         savedStudent.setFirstName("Dina");
         manager.update(savedStudent);
         Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
-
         assertThat(foundStudent.getFirstName()).isNotEqualTo(returnedStudent.getFirstName());
         assertThat(foundStudent).usingRecursiveComparison().isNotEqualTo(returnedStudent);
     }

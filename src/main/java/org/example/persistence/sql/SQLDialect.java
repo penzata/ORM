@@ -12,6 +12,9 @@ public class SQLDialect {
     public static final String SQL_FIND_ALL = """
             SELECT * FROM
             """;
+    public static final String UPDATE_STUDENT= """
+            UPDATE students set first_name = ? WHERE id = ?
+            """;
 
     public static final String ID = " GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
     public static final String STRING = " VARCHAR(255)";
