@@ -118,7 +118,7 @@ public class ORManagerImpl implements ORManager {
             Field[] fields = o.getClass().getDeclaredFields();
             fields[0].setAccessible(true);
             fields[1].setAccessible(true);
-            PreparedStatement ps = conn.prepareStatement(UPDATE_STUDENT);
+            PreparedStatement ps = conn.prepareStatement(getTableAndColumnNamesForUpdate(o.getClass()));
             ps.setString(1, fields[1].get(o).toString());
             ps.setString(2, fields[0].get(o).toString());
             ps.executeUpdate();
