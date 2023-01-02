@@ -44,4 +44,17 @@ public class SQLDialect {
         String tableName = AnnotationUtils.getTableName(clss);
         return String.format("SELECT * FROM %s WHERE id=?", tableName);
     }
+    public static String getTableAndColumnNamesForUpdate(Class<?> cls){
+        Field[] declaredFields = cls.getDeclaredFields();
+        List<String> columnNames = new ArrayList<>();
+        List<String> parameters = new ArrayList<>();
+        for(Field declaredField: declaredFields) {
+            if (!declaredField.isAnnotationPresent(Id.class)) {
+                columnNames.add(AnnotationUtils.getColumnName(declaredField));
+                parameters.add("?");
+            }
+        }
+        String tableName = AnnotationUtils.getTableName(cls);
+        return String.format("UPDATE %s SET %s = (%s)  WHERE id = ?", tableName, String.join(", ", columnNames),String.join(", ", parameters));
+    }
 }
