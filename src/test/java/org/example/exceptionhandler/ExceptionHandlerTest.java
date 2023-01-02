@@ -1,7 +1,6 @@
 package org.example.exceptionhandler;
 
 import org.example.domain.model.Student;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,11 +24,6 @@ class ExceptionHandlerTest {
         student = new Student("Pinky");
         declaredFields = student.getClass().getDeclaredFields();
         declaredConstructor = student.getClass().getDeclaredConstructor();
-    }
-
-    @AfterEach
-    void tearDown() {
-
     }
 
     @Test
