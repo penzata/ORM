@@ -206,6 +206,11 @@ class ORManagerImplTest {
 
         assertThat(foundUpdatedStudent.getFirstName()).isEqualTo(foundStudent.getFirstName());
         assertThat(foundUpdatedStudent).usingRecursiveComparison().isEqualTo(foundStudent);
+
+        assertThat(createdStudentsTable).column(0)
+                .value().isEqualTo(foundStudent.getId())
+                .column(1)
+                .value().isEqualTo("Don");
     }
 
     @Test
@@ -219,6 +224,11 @@ class ORManagerImplTest {
 
         assertThat(foundStudent.getFirstName()).isNotEqualTo(returnedStudent.getFirstName());
         assertThat(foundStudent).usingRecursiveComparison().isNotEqualTo(returnedStudent);
+
+        assertThat(createdStudentsTable).column(0)
+                .value().isEqualTo(savedStudent.getId())
+                .column(1)
+                .value().isEqualTo("Dina");
     }
 
 }
