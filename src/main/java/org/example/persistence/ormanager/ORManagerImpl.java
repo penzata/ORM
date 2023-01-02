@@ -41,7 +41,7 @@ public class ORManagerImpl implements ORManager {
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
-                   log.error("There's some problem with the database access", e);
+                    ExceptionHandler.sql(e);
                 }
             }
         }
@@ -93,7 +93,8 @@ public class ORManagerImpl implements ORManager {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
             declaredConstructor.setAccessible(true);
             objectToFind = declaredConstructor.newInstance();
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
             ExceptionHandler.newInstance(e);
         }
 
@@ -149,9 +150,12 @@ public class ORManagerImpl implements ORManager {
                 fields[1].set(myObj, rs.getString(2));
                 records.add(myObj);
             }
-            log.info("all records: {}", records);
-        } catch (Exception e) {
-            e.printStackTrace();
+            log.atDebug().log("all records: {}", records);
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException |
+                 InstantiationException e) {
+            ExceptionHandler.illegalAccessOrNewInstance(e);
         }
         return records;
     }
