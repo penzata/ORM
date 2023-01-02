@@ -49,19 +49,14 @@ public class Utils {
         config.setJdbcUrl(url);
         config.setUsername(user);
         config.setPassword(password);
-        HikariDataSource dataSource = new HikariDataSource(config);
-        setDataSourceFromORMCreation(dataSource);
+        dataSource = new HikariDataSource(config);
         return dataSource;
     }
 
-    private static void setDataSourceFromORMCreation(HikariDataSource dataSource) {
-        Utils.dataSource = dataSource;
-    }
-
     /**
+     * Need to initialize ORManager first to set this data source or the connection will be null.
      * @return connection from the datasource, provided by the created ORM Manager.
      * @throws SQLException
-     * Need to initialize ORManager first to set this data source or the connection will be null.
      */
     public static Connection getConnection() throws SQLException {
         return dataSource != null ? dataSource.getConnection() : null;
