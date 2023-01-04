@@ -5,6 +5,8 @@ import org.example.domain.model.Student;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.utilities.Utils;
 
+import java.time.LocalDate;
+
 public class Main {
     public static void main(String[] args) {
         String path = "h2.properties";
@@ -12,8 +14,8 @@ public class Main {
 
         orManager.register(SchoolClass.class);
         orManager.register(Student.class);
-        orManager.save(new Student("Ivan"));
-        orManager.findById(2L, Student.class);
+        orManager.save(new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24")));
+        orManager.findById(2, Student.class);
         orManager.findAll(Student.class);
     }
 }

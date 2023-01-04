@@ -26,7 +26,7 @@ class AnnotationsTest {
 
     @Test
     void WhenTableAnnotationIsAbsentThenReturnClassNameInPlural() {
-        String expectedTableName = "WithoutAnnos";
+        String expectedTableName = "withoutannos";
 
         String tableName = AnnotationUtils.getTableName(WithoutAnno.class);
 
@@ -44,7 +44,7 @@ class AnnotationsTest {
 
     @Test
     void WhenTableAnnotationIsPresentAndNameIsDefaultThenReturnClassNameInPlural() {
-        String expectedTableName = "DefaultAnnos";
+        String expectedTableName = "defaultannos";
 
         String tableName = AnnotationUtils.getTableName(DefaultAnno.class);
 
