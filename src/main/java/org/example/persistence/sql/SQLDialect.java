@@ -28,6 +28,10 @@ public class SQLDialect {
 
     private SQLDialect() {
     }
+    public static String getTableForDelete(Class<?> cls){
+        String tableName = AnnotationUtils.getTableName(cls);
+        return String.format("DELETE FROM %s WHERE id = ?", tableName);
+    }
 
     public static String sqlInsertStatement(Class<?> clss) {
         Field[] declaredFields = clss.getDeclaredFields();

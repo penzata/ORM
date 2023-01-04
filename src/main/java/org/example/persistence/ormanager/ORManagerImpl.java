@@ -248,7 +248,21 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public boolean delete(Object o) {
+
+        Field idField = o.getClass().getDeclaredFields()[0];
+        idField.setAccessible(true);
+        try(Connection connection = dataSource.getConnection()){
+            PreparedStatement ps = connection.prepareStatement(getTableForDelete(o.getClass()));
+            ps.setString(1,idField.get(o).toString());
+             ps.executeUpdate();
+            idField.set(o, null);
+            return true;
+        }
+        catch(Exception ex){
+            log.error("Exception has occurred: ", ex);
+        }
         return false;
+
     }
 
     @Override
