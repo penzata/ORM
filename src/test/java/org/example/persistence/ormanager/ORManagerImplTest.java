@@ -176,7 +176,6 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
-
         manager.save(Student1);
 
         boolean result = manager.delete(Student1);
@@ -252,6 +251,27 @@ class ORManagerImplTest {
                 .value().isEqualTo("Dina");
 
         output(createdStudentsTable).toFile("tableFromTest");
+    }
+
+    //todo to be deleated
+    @Test
+    void stuff() {
+        Student st1 = new Student("Don", "Johnson", 63, LocalDate.now());
+        Student st2 = new Student("Emma", "Thompson", 56, LocalDate.now());
+        Student st3 = new Student("Kurt", "Russell", 44, LocalDate.now());
+
+        Academy ac1 = new Academy("SoftServe");
+        Academy ac2 = new Academy("Khan");
+
+        st1.setAcademy(ac1);
+//        st2.setAcademy(ac1);
+//        st3.setAcademy(ac2);
+
+        manager.save(st1);
+        manager.save(st2);
+        manager.save(st3);
+
+        output(createdStudentsTable).toConsole();
     }
 
 }
