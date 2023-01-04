@@ -160,6 +160,8 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
+        manager.save(student1);
+
         boolean result = manager.delete(student1);
 
         assertTrue(result);
