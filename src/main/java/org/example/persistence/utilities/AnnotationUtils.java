@@ -28,27 +28,24 @@ public class AnnotationUtils {
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
         for (Field declaredField : clss.getDeclaredFields()) {
-            String fieldName = null;
-            String columnName = null;
-            String constraints = null;
-            String idTag = "";
-            if (declaredField.isAnnotationPresent(Column.class)) {
-                fieldName = declaredField.getType().getSimpleName();
-                columnName = getColumnName(declaredField);
-                constraints =
-                        (isUnique(declaredField) ? " UNIQUE " : "") +
-                                (canBeNull(declaredField) ? "" : " NOT NULL");
-                idTag = sqlIdStatement(declaredField);
-            } else if (declaredField.isAnnotationPresent(ManyToOne.class)) {
-                fieldName = "Long";
+            String fieldName = declaredField.getType().getSimpleName();
+            String columnName = getColumnName(declaredField);
+            String idTag = sqlIdStatement(declaredField);
+            String constraints;
+            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
+                fieldName = "foreign key";
                 columnName = getColumnNameFromManyToOne(declaredField);
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
                 String referenceTableName = declaredField.getType().getAnnotation(Table.class).name();
                 columnNames.add("FOREIGN KEY(" + columnName + ") REFERENCES " + referenceTableName + "(id)");
+            } else {
+                constraints =
+                        (isUnique(declaredField) ? " UNIQUE " : "") +
+                        (canBeNull(declaredField) ? "" : " NOT NULL");
             }
             switch (fieldName) {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + idTag + constraints);
-                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
+                case "Long", "long", "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idTag + constraints);
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idTag + constraints);
                 case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idTag + constraints);
@@ -70,7 +67,7 @@ public class AnnotationUtils {
     public static String getColumnNameFromManyToOne(Field field) {
         if (field.isAnnotationPresent(ManyToOne.class)) {
             String fieldName = field.getAnnotation(ManyToOne.class).name();
-            return fieldName.equals("") ? field.getName() : fieldName;
+            return fieldName;
         } else {
             return field.getName();
         }

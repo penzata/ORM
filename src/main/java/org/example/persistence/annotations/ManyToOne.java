@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 public @interface ManyToOne {
     Class targetEntity() default void.class;
 
-    String name() default "";
+    String name();
 
     boolean nullable() default true;
 

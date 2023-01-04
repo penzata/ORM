@@ -37,7 +37,6 @@ public class ORManagerImpl implements ORManager {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
-                System.out.println(sqlCreateTable);
                 log.atDebug().log(sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
