@@ -32,12 +32,13 @@ public class AnnotationUtils {
             String columnName = getColumnName(declaredField);
             String idTag = sqlIdStatement(declaredField);
             String constraints;
+            List<String> keys = new ArrayList<>();
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 fieldName = "foreign key";
-                columnName = getColumnNameFromManyToOne(declaredField);
+                columnName = declaredField.getAnnotation(ManyToOne.class).name();
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
                 String referenceTableName = declaredField.getType().getAnnotation(Table.class).name();
-                columnNames.add("FOREIGN KEY(" + columnName + ") REFERENCES " + referenceTableName + "(id)");
+                keys.add("FOREIGN KEY(" + columnName + ") REFERENCES " + referenceTableName + "(id)");
             } else {
                 constraints =
                         (isUnique(declaredField) ? " UNIQUE " : "") +
@@ -51,6 +52,9 @@ public class AnnotationUtils {
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idTag + constraints);
                 case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idTag + constraints);
                 default -> columnNames.add("");
+            }
+            if (!keys.isEmpty()){
+                columnNames.addAll(keys);
             }
         }
         return columnNames;
