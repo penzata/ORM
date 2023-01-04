@@ -99,11 +99,10 @@ public class ORManagerImpl implements ORManager {
                 System.out.println(declaredFields[i].get(o).toString());
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
-                    case "Long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
-                    case "Integer" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "Long","long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Integer","int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
+                    case "Boolean","boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    case "int" -> ps.setLong(i, (Integer) declaredFields[i].get(o));
                     default -> ps.setLong(i, Long.parseLong(declaredFields[i].get(o).toString()));
                 }
             }
