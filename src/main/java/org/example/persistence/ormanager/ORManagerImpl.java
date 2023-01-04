@@ -3,6 +3,7 @@ package org.example.persistence.ormanager;
 import lombok.extern.slf4j.Slf4j;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
@@ -35,9 +36,8 @@ public class ORManagerImpl implements ORManager {
             String tableName = getTableName(cls);
             if (cls.isAnnotationPresent(Entity.class)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
-                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", CREATE_TABLE, tableName,
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
-                log.atDebug().log(sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
@@ -53,21 +53,16 @@ public class ORManagerImpl implements ORManager {
             return o;
         }
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(getTableAndColumnNamesForInsert(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
-            Field[] declaredFields = o.getClass().getDeclaredFields();
-            declaredFields[1].setAccessible(true);
-            ps.setString(1, declaredFields[1].get(o).toString());
+             PreparedStatement ps = connection.prepareStatement(sqlInsertStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
+            replacePlaceholdersInStatement(o, ps);
             ps.executeUpdate();
             ResultSet rs = ps.getGeneratedKeys();
             while (rs.next()) {
-                declaredFields[0].setAccessible(true);
-                long generatedId = rs.getLong(1);
-                declaredFields[0].set(o, generatedId);
+                setEntityGeneratedId(o, rs);
             }
+            rs.close();
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
         }
         SerializationUtil.serialize(o);
         return o;
@@ -77,60 +72,120 @@ public class ORManagerImpl implements ORManager {
         boolean exists = false;
         try {
             Field[] declaredFields = o.getClass().getDeclaredFields();
-            declaredFields[0].setAccessible(true);
-            exists = declaredFields[0].get(o) != null;
+            if (declaredFields[0].isAnnotationPresent(Id.class)) {
+                declaredFields[0].setAccessible(true);
+                exists = declaredFields[0].get(o) != null;
+            }
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
         return exists;
     }
 
+    private <T> void replacePlaceholdersInStatement(T o, PreparedStatement ps) throws SQLException {
+        try {
+            Field[] declaredFields = o.getClass().getDeclaredFields();
+            for (int i = 1; i < declaredFields.length; i++) {
+                declaredFields[i].setAccessible(true);
+                String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                switch (fieldTypeName) {
+                    case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
+                    case "Long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Integer" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
+                    case "Boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
+                }
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+    }
+
+    private <T> void setEntityGeneratedId(T o, ResultSet generatedKey) throws SQLException {
+        Field[] declaredFields = o.getClass().getDeclaredFields();
+        try {
+            declaredFields[0].setAccessible(true);
+            String fieldTypeSimpleName = declaredFields[0].getType().getSimpleName();
+            if (fieldTypeSimpleName.equals("Long")) {
+                declaredFields[0].set(o, generatedKey.getLong(1));
+            } else {
+                declaredFields[0].set(o, generatedKey.getInt(1));
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+    }
+
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
-        T objectToFind = null;
-        Field[] declaredFields = cls.getDeclaredFields();
+        T entity = null;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sqlSelectStatement(cls))) {
+            if (id.getClass().getSimpleName().equalsIgnoreCase("long")) {
+                ps.setLong(1, (Long) id);
+            } else {
+                ps.setInt(1, (Integer) id);
+            }
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                entity = extractEntityFromResultSet(rs, cls);
+            }
+            rs.close();
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        }
+        return entity != null ? Optional.of(entity) : Optional.empty();
+    }
+
+    private <T> T extractEntityFromResultSet(ResultSet rs, Class<T> clss) throws SQLException {
+        T entityToFind = createNewInstance(clss);
+        try {
+            Field[] declaredFields = clss.getDeclaredFields();
+            for (int i = 0; i < declaredFields.length; i++) {
+                declaredFields[i].setAccessible(true);
+                String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                int columnIndex = i + 1;
+                switch (fieldTypeName) {
+                    case "String" -> declaredFields[i].set(entityToFind, rs.getString(columnIndex));
+                    case "Long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
+                    case "Integer" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
+                    case "Boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
+                    case "Double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
+                    case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                }
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return entityToFind;
+    }
+
+    private <T> T createNewInstance(Class<T> cls) {
+        T newObject = null;
         try {
             Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
             declaredConstructor.setAccessible(true);
-            objectToFind = declaredConstructor.newInstance();
+            newObject = declaredConstructor.newInstance();
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                  InvocationTargetException e) {
             ExceptionHandler.newInstance(e);
         }
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(getTableNameForSelect(cls))) {
-            ps.setLong(1, (Long) id);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                long personId = rs.getLong(1);
-                String firstName = rs.getString(2);
-                declaredFields[0].setAccessible(true);
-                declaredFields[0].set(objectToFind, personId);
-                declaredFields[1].setAccessible(true);
-                declaredFields[1].set(objectToFind, firstName);
-            }
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-        return Optional.ofNullable(objectToFind);
+        return newObject;
     }
 
     @Override
     public <T> T update(T o) {
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlUpdateStatement(o.getClass()))) {
+            replacePlaceholdersInStatement(o, ps);
             Field[] fields = o.getClass().getDeclaredFields();
-            fields[0].setAccessible(true);
-            fields[1].setAccessible(true);
-            PreparedStatement ps = conn.prepareStatement(getTableAndColumnNamesForUpdate(o.getClass()));
-            ps.setString(1, fields[1].get(o).toString());
-            ps.setString(2, fields[0].get(o).toString());
+            int placeholderForId = fields.length;
+            ps.setString(placeholderForId, fields[0].get(o).toString());
             ps.executeUpdate();
-
-        } catch (SQLException | IllegalAccessException ex) {
-            log.info("Exception has occurred: ", ex);
+        } catch (SQLException ex) {
+            ExceptionHandler.sql(ex);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
         }
         return o;
     }
@@ -141,33 +196,17 @@ public class ORManagerImpl implements ORManager {
     }
 
     @Override
-    public int recordsCount(Class<?> clss) {
-        return findAll(clss).size();
-    }
-
-    @Override
     public <T> List<T> findAll(Class<T> cls) {
         List<T> records = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
-                Constructor<T> objDeclaredConstructor = cls.getDeclaredConstructor();
-                objDeclaredConstructor.setAccessible(true);
-                T myObj = objDeclaredConstructor.newInstance();
-                Field[] fields = myObj.getClass().getDeclaredFields();
-                fields[0].setAccessible(true);
-                fields[0].set(myObj, rs.getLong(1));
-                fields[1].setAccessible(true);
-                fields[1].set(myObj, rs.getString(2));
-                records.add(myObj);
+                records.add(extractEntityFromResultSet(rs, cls));
             }
-            log.atDebug().log("all records: {}", records);
+            rs.close();
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException |
-                 InstantiationException e) {
-            ExceptionHandler.illegalAccessOrNewInstance(e);
         }
         return records;
     }
@@ -182,5 +221,20 @@ public class ORManagerImpl implements ORManager {
     @Override
     public boolean delete(Object o) {
         return false;
+    }
+
+    @Override
+    public long recordsCount(Class<?> clss) {
+        long count = 0;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(SQL_COUNT_ALL + getTableName(clss))) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                count = rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        }
+        return count;
     }
 }
