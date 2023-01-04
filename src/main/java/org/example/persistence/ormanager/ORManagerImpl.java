@@ -1,8 +1,10 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.exceptionhandler.ExceptionHandler;
+import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
+import org.example.persistence.annotations.ManyToOne;
+import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.SerializationUtil;
 
@@ -17,8 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
-import static org.example.persistence.utilities.AnnotationUtils.getTableName;
+import static org.example.persistence.utilities.AnnotationUtils.*;
 
 
 @Slf4j
