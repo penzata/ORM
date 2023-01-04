@@ -36,7 +36,7 @@ public class AnnotationUtils {
             String constraints;
           
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
-                fieldName = "foreign key";
+                fieldTypeName = "foreign key";
                 columnName = declaredField.getAnnotation(ManyToOne.class).name();
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
                 String referenceTableName = declaredField.getType().getAnnotation(Table.class).name();
@@ -46,13 +46,15 @@ public class AnnotationUtils {
                         (isUnique(declaredField) ? " UNIQUE " : "") +
                         (canBeNull(declaredField) ? "" : " NOT NULL");
             }
-            switch (fieldName) {
-                case "String" -> columnNames.add(columnName + SQLDialect.STRING + idAndPKTag + constraints);
-                case "Long", "long", "foreign key" ->
-                        columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
-                case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idAndPKTag + constraints);
-                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idAndPKTag + constraints);
-                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idAndPKTag + constraints);
+            switch (fieldTypeName) {
+                case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
+                case "Long", "long" ->
+                        columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
+                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
+                case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
+                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN   + constraints);
+                case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
+                case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
                 default -> columnNames.add("");
             }
             columnNames.addAll(keys);

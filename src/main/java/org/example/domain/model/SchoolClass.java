@@ -18,7 +18,17 @@ public class SchoolClass {
 //    @OneToMany(mappedBy = "school_class")
 //    List<Student> students;
 
+
+    public SchoolClass(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return "school_class";
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(id);
     }
 }

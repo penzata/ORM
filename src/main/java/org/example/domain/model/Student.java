@@ -34,4 +34,8 @@ public class Student implements Serializable {
         this.age = age;
         this.graduateAcademy = graduateAcademy;
     }
+    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy, SchoolClass schoolClass) {
+        this(firstName, secondName, age, graduateAcademy);
+        this.schoolClass = schoolClass;
+    }
 }
