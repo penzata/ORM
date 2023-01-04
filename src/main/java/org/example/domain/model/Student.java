@@ -22,8 +22,8 @@ public class Student implements Serializable {
     private int age;
     @Column(name = "graduate_academy")
     private LocalDate graduateAcademy;
-    @ManyToOne(targetEntity = SchoolClass.class, name ="school_class_id")
-    private SchoolClass schoolClass;
+    @ManyToOne(targetEntity = Academy.class, name ="academy_id")
+    private Academy academy;
   
     Student() {
     }
@@ -33,9 +33,5 @@ public class Student implements Serializable {
         this.secondName = secondName;
         this.age = age;
         this.graduateAcademy = graduateAcademy;
-    }
-    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy, SchoolClass schoolClass) {
-        this(firstName, secondName, age, graduateAcademy);
-        this.schoolClass = schoolClass;
     }
 }
