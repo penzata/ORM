@@ -63,13 +63,15 @@ public class AnnotationUtils {
     }
 
     public static String getColumnName(Field field) {
-        if (field.isAnnotationPresent(Column.class)) {
-            String fieldName = field.getAnnotation(Column.class).name();
-            return fieldName.equals("") ? field.getName() : fieldName;
-        } else {
-            return field.getName();
+        String fieldName = "";
+        if(field.isAnnotationPresent(ManyToOne.class)) {
+            fieldName = getColumnNameFromManyToOne(field);
         }
-    }
+        if (field.isAnnotationPresent(Column.class)) {
+            fieldName = field.getAnnotation(Column.class).name();
+        }
+            return fieldName.equals("") ? field.getName() : fieldName;
+        }
 
     public static String getColumnNameFromManyToOne(Field field) {
         return field.getAnnotation(ManyToOne.class).name();
