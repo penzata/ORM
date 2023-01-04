@@ -27,12 +27,12 @@ public class AnnotationUtils {
 
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
         for (Field declaredField : clss.getDeclaredFields()) {
             String fieldName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
             String idTag = sqlIdStatement(declaredField);
             String constraints;
-            List<String> keys = new ArrayList<>();
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 fieldName = "foreign key";
                 columnName = declaredField.getAnnotation(ManyToOne.class).name();
