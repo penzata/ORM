@@ -95,8 +95,6 @@ public class ORManagerImpl implements ORManager {
             for (int i = 1; i < declaredFields.length; i++) {
                 declaredFields[i].setAccessible(true);
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
-                System.out.println(fieldTypeName);
-                System.out.println(declaredFields[i].get(o).toString());
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
                     case "Long","long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
