@@ -13,6 +13,7 @@ public class SQLDialect {
             SELECT * FROM
             """;
 
+
     public static final String ID = " GENERATED ALWAYS AS IDENTITY PRIMARY KEY";
     public static final String STRING = " VARCHAR(255)";
     public static final String DATETIME = " DATETIME";
@@ -21,6 +22,10 @@ public class SQLDialect {
     public static final String BOOLEAN = " BOOLEAN";
 
     private SQLDialect() {
+    }
+    public static String getTableForDelete(Class<?> cls){
+        String tableName = AnnotationUtils.getTableName(cls);
+        return String.format("DELETE FROM %s WHERE id = ?", tableName);
     }
 
     public static String getTableAndColumnNamesForInsert(Class<?> clss) {
