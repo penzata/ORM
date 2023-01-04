@@ -28,18 +28,14 @@ public class Student implements Serializable {
     Student() {
     }
 
-    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy, SchoolClass schoolClass) {
-        this.firstName = firstName;
-        this.secondName = secondName;
-        this.age = age;
-        this.graduateAcademy = graduateAcademy;
-        this.schoolClass = schoolClass;
-    }
-
     public Student(String firstName, String secondName, int age, LocalDate graduateAcademy) {
         this.firstName = firstName;
         this.secondName = secondName;
         this.age = age;
         this.graduateAcademy = graduateAcademy;
+    }
+    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy, SchoolClass schoolClass) {
+        this(firstName, secondName, age, graduateAcademy);
+        this.schoolClass = schoolClass;
     }
 }

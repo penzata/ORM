@@ -47,12 +47,14 @@ public class AnnotationUtils {
                         (canBeNull(declaredField) ? "" : " NOT NULL");
             }
             switch (fieldTypeName) {
-                case "String" -> columnNames.add(columnName + SQLDialect.STRING + idAndPKTag + constraints);
-                case "Long", "long", "foreign key" ->
+                case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
+                case "Long", "long" ->
                         columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
-                case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + idAndPKTag + constraints);
-                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idAndPKTag + constraints);
+                case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
+                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN   + constraints);
+                case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
                 case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
+                case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
                 default -> columnNames.add("");
             }
             columnNames.addAll(keys);
