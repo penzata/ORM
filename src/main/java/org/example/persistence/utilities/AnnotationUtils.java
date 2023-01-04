@@ -45,7 +45,8 @@ public class AnnotationUtils {
             }
             switch (fieldName) {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + idTag + constraints);
-                case "Long", "long", "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
+                case "Long", "long", "foreign key" ->
+                        columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idTag + constraints);
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idTag + constraints);
                 case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idTag + constraints);
@@ -65,12 +66,7 @@ public class AnnotationUtils {
     }
 
     public static String getColumnNameFromManyToOne(Field field) {
-        if (field.isAnnotationPresent(ManyToOne.class)) {
-            String fieldName = field.getAnnotation(ManyToOne.class).name();
-            return fieldName;
-        } else {
-            return field.getName();
-        }
+        return field.getAnnotation(ManyToOne.class).name();
     }
 
     public static boolean isUnique(Field field) {
