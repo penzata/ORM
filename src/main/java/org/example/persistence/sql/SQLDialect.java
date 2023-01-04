@@ -1,6 +1,7 @@
 package org.example.persistence.sql;
 
 import org.example.persistence.annotations.Id;
+import org.example.persistence.annotations.ManyToOne;
 import org.example.persistence.utilities.AnnotationUtils;
 
 import java.lang.reflect.Field;
@@ -34,7 +35,10 @@ public class SQLDialect {
         List<String> columnNames = new ArrayList<>();
         List<String> placeholders = new ArrayList<>();
         for (Field declaredField : declaredFields) {
-            if (!declaredField.isAnnotationPresent(Id.class)) {
+            if (declaredField.isAnnotationPresent(ManyToOne.class)){
+                columnNames.add(AnnotationUtils.getColumnNameFromManyToOne(declaredField));
+                placeholders.add("?");
+            }else if (!declaredField.isAnnotationPresent(Id.class)) {
                 columnNames.add(AnnotationUtils.getColumnName(declaredField));
                 placeholders.add("?");
             }

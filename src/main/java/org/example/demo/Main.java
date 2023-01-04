@@ -14,7 +14,9 @@ public class Main {
 
         orManager.register(SchoolClass.class);
         orManager.register(Student.class);
-        orManager.save(new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24")));
+        SchoolClass someClass = new SchoolClass("12A");
+        orManager.save(someClass);
+        orManager.save(new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"), someClass));
         orManager.findById(2, Student.class);
         orManager.findAll(Student.class);
     }

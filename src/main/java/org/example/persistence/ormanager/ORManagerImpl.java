@@ -1,9 +1,7 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
-import org.example.persistence.annotations.ManyToOne;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.SerializationUtil;
@@ -97,12 +95,16 @@ public class ORManagerImpl implements ORManager {
             for (int i = 1; i < declaredFields.length; i++) {
                 declaredFields[i].setAccessible(true);
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                System.out.println(fieldTypeName);
+                System.out.println(declaredFields[i].get(o).toString());
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
                     case "Long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
                     case "Integer" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
                     case "Boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
+                    case "int" -> ps.setLong(i, (Integer) declaredFields[i].get(o));
+                    default -> ps.setLong(i, Long.parseLong(declaredFields[i].get(o).toString()));
                 }
             }
         } catch (IllegalAccessException e) {
