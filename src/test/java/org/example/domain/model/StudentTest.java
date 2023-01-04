@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
@@ -14,8 +16,8 @@ class StudentTest {
 
     @BeforeEach
     void setUp() {
-        student1 = new Student("Bob");
-        student2 = new Student("Dale");
+        student1 = new Student("Bob", "just Bob", 100, LocalDate.now());
+        student2 = new Student("Dale", "Cooper", 33, LocalDate.now());
     }
 
     @Test
@@ -46,6 +48,8 @@ class StudentTest {
         assertNotEquals(student1, student2);
 
         student2.setFirstName("Bob");
+        student2.setSecondName("just Bob");
+        student2.setAge(100);
         boolean afterChangeResult = student1.hashCode() == student2.hashCode();
         log.atDebug().log("st1's hashcode: {}\nst2's hashcode: {}", student1.hashCode(), student2.hashCode());
 
@@ -62,6 +66,8 @@ class StudentTest {
         assertNotEquals(student1.toString(), student2.toString());
 
         student2.setFirstName("Bob");
+        student2.setSecondName("just Bob");
+        student2.setAge(100);
 
         assertEquals(student1.toString(), student2.toString());
     }
@@ -72,6 +78,9 @@ class StudentTest {
 
         assertNull(student.getId());
         assertNull(student.getFirstName());
+        assertNull(student.getSecondName());
+        assertEquals(0, student.getAge());
+        assertNull(student.getGraduateAcademy());
     }
 
 }
