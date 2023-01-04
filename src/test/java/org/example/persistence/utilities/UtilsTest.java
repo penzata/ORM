@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.*;
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,9 +55,9 @@ class UtilsTest {
     }
 
     @Test
-    void withPropertiesFromCheck() throws SQLException {
+    void withPropertiesFrom() throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement(SQL_ADD_ONE, Statement.RETURN_GENERATED_KEYS)) {
-            Student st1 = new Student("Dick");
+            Student st1 = new Student("Dick", "Cheney", 81, LocalDate.now());
 
             stmt.setString(1, st1.getFirstName());
             stmt.executeUpdate();

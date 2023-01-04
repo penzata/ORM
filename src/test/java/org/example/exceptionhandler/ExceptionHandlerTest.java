@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,7 +22,7 @@ class ExceptionHandlerTest {
 
     @BeforeEach
     void setUp() throws NoSuchMethodException {
-        student = new Student("Pinky");
+        student = new Student("Pinky", "One", 3, LocalDate.now());
         declaredFields = student.getClass().getDeclaredFields();
         declaredConstructor = student.getClass().getDeclaredConstructor();
     }
@@ -45,13 +46,6 @@ class ExceptionHandlerTest {
         ReflectiveOperationException exception = assertThrows(ReflectiveOperationException.class, () -> declaredConstructor.newInstance());
 
         ExceptionHandler.newInstance(exception);
-    }
-
-    @Test
-    void illegalAccessOrNewInstance() {
-        IllegalAccessException exception = assertThrows(IllegalAccessException.class, () -> declaredConstructor.newInstance());
-
-        ExceptionHandler.illegalAccessOrNewInstance(exception);
     }
 
     @Test

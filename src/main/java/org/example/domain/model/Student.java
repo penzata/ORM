@@ -6,8 +6,8 @@ import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.annotations.Table;
 
-import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 @Data
 @Entity
@@ -18,12 +18,20 @@ public class Student implements Serializable {
     private Long id;
     @Column(name = "first_name", nullable = false)
     private String firstName;
-
-    public Student(String firstName) {
-        this.firstName = firstName;
-    }
+    @Column(name = "second_name", nullable = false)
+    private String secondName;
+    @Column(name = "age", nullable = false)
+    private int age;
+    @Column(name = "graduate_academy")
+    private LocalDate graduateAcademy;
 
     Student() {
     }
 
+    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy) {
+        this.firstName = firstName;
+        this.secondName = secondName;
+        this.age = age;
+        this.graduateAcademy = graduateAcademy;
+    }
 }

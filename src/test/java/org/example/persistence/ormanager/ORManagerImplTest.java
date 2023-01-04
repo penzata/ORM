@@ -1,9 +1,9 @@
 package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.db.type.Table;
-import org.example.domain.model.Student;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,22 +30,23 @@ class ORManagerImplTest {
     ORManager manager;
     HikariDataSource dataSource;
     Connection connection;
-    PreparedStatement ps;
-    Table createdStudentsTable;
-    Student student1;
+    PreparedStatement st;
+    Table createdDudesTable;
+    Dude dude1;
 
     @AfterEach
     void tearDown() throws SQLException {
-        ps = connection.prepareStatement("DROP TABLE students");
-        ps.executeUpdate();
+        st = connection.prepareStatement("DROP TABLE dudes");
+        st.executeUpdate();
+
         if (connection != null) {
             connection.close();
         }
         if (dataSource != null) {
             dataSource.close();
         }
-        if (ps != null) {
-            ps.close();
+        if (st != null) {
+            st.close();
         }
     }
 
@@ -53,74 +55,73 @@ class ORManagerImplTest {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:h2:mem:test");
         manager = Utils.withDataSource(dataSource);
-        manager.register(Student.class);
+        manager.register(Dude.class);
         connection = dataSource.getConnection();
-        createdStudentsTable = new Table(dataSource, "students");
-        student1 = new Student("Bob");
+        createdDudesTable = new Table(dataSource, "dudes");
+        dude1 = new Dude("Bob");
     }
 
     @Test
-    void CanSaveOneStudentToDatabaseAndReturnStudentWithId() {
-        Student savedStudent = manager.save(student1);
+    void CanSaveOneDudeToDatabaseAndReturnDudeWithId() {
+        Dude savedDude = manager.save(dude1);
 
-        assertThat(savedStudent.getId()).isNotNull();
+        assertThat(savedDude.getId()).isNotNull();
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdDudesTable).toFile("tableFromTest");
     }
 
     @Test
-    void CanSaveTwoStudentsToDatabaseAndReturnStudentsWithId() {
-        Student savedStudent = manager.save(student1);
-        Student savedBeavis = manager.save(new Student("Dale"));
+    void CanSaveTwoDudesToDatabaseAndReturnDudesWithId() {
+        Dude savedDude = manager.save(dude1);
+        Dude savedSecondDude = manager.save(new Dude("Dale"));
 
-        assertThat(savedStudent.getId()).isPositive();
-        assertThat(savedBeavis.getId()).isGreaterThan(savedStudent.getId());
+        assertThat(savedDude.getId()).isPositive();
+        assertThat(savedSecondDude.getId()).isGreaterThan(savedDude.getId());
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdDudesTable).toFile("tableFromTest");
     }
 
     @Test
     void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
-        Student st = new Student("Shelly");
+        Dude st = new Dude("Shelly");
         manager.save(st);
         manager.save(st);
         manager.save(st);
 
-        assertThat(createdStudentsTable).hasNumberOfRows(1);
+        assertThat(createdDudesTable).hasNumberOfRows(1);
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdDudesTable).toFile("tableFromTest");
     }
 
     @Test
     void canFindPersonById() {
-        Student savedStudent = manager.save(new Student("Harry"));
+        Dude savedDude = manager.save(new Dude("Harry"));
 
-        Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
+        Optional<Dude> foundDude = manager.findById(savedDude.getId(), Dude.class);
 
-        assertThat(foundStudent).contains(savedStudent);
+        assertThat(foundDude).contains(savedDude);
     }
 
     @Test
-    void WhenIdDoesntExistsThenReturnNullableObject() {
-        Optional<Student> personToBeFound = manager.findById(-1L, Student.class);
+    void WhenIdDoesntExistsThenReturnEmptyOptional() {
+        Optional<Dude> personToBeFound = manager.findById(-1L, Dude.class);
 
-        assertThat(personToBeFound.get().getId()).isNull();
-        assertThat(personToBeFound.get().getFirstName()).isNull();
+        assertThat(personToBeFound).isNotPresent();
     }
 
     @Test
     void WhenFindAllThenReturnAllSavedToDBObjects() {
-        manager.save(new Student("Ivan"));
-        manager.save(new Student("Petkan"));
+        manager.save(new Dude("Ivan"));
+        manager.save(new Dude("Petkan"));
 
-        List<Student> allStudents = manager.findAll(Student.class);
+        List<Dude> allDudes = manager.findAll(Dude.class);
 
-        assertThat(allStudents).hasSize(2);
-        assertThat(createdStudentsTable).row(1)
+        assertThat(allDudes).hasSize(2);
+        assertThat(createdDudesTable).row(1)
                 .value().isEqualTo(2)
                 .value().isEqualTo("Petkan");
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdDudesTable).toFile("tableFromTest");
     }
 
     @Test
@@ -148,87 +149,129 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenDeletingFromRecordsThenReturnRecordsCountWithOneRecordLess() {
-        Student savedStudent = manager.save(new Student("Laura"));
-        int startCount = manager.recordsCount(Student.class);
+    void WhenSavingThreeEntitiesTwoDBThenReturnRecordsCountToBeEqualToThree() {
+        long startCount = manager.recordsCount(Dude.class);
+        Dude un = manager.save(new Dude("Un"));
+        Dude dos = manager.save(new Dude("Dos"));
+        Dude tres = manager.save(new Dude("Tres"));
 
-        manager.delete(savedStudent);
-        int endCount = manager.recordsCount(Student.class);
+        long endCount = manager.recordsCount(Dude.class);
+
+        assertThat(endCount).isEqualTo(startCount + 3);
+    }
+
+    @Test
+    void WhenDeletingFromRecordsThenReturnRecordsCountWithOneRecordLess() {
+        Dude savedDude = manager.save(new Dude("Laura"));
+        long startCount = manager.recordsCount(Dude.class);
+
+        manager.delete(savedDude);
+        long endCount = manager.recordsCount(Dude.class);
 
         assertThat(endCount).isEqualTo(startCount - 1);
     }
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
-        boolean result = manager.delete(student1);
+        manager.save(dude1);
+
+        boolean result = manager.delete(dude1);
 
         assertTrue(result);
     }
 
     @Test
     void WhenDeletingRecordThatDoesntExistsThenReturnFalse() {
-        Student notSavedInDBStudent = new Student("Andi");
+        Dude notSavedInDBDude = new Dude("Andi");
 
-        boolean result = manager.delete(notSavedInDBStudent);
+        boolean result = manager.delete(notSavedInDBDude);
 
         assertFalse(result);
     }
 
     @Test
     void WhenDeletingRecordSetAutoGeneratedIdToNull() {
-        Student savedStudent = manager.save(new Student("Bobby"));
+        Dude savedDude = manager.save(new Dude("Bobby"));
 
-        manager.delete(savedStudent);
+        manager.delete(savedDude);
 
-        assertThat(savedStudent.getId()).isNull();
+        assertThat(savedDude.getId()).isNull();
     }
 
     @Test
     void canDeleteMultipleRecords() {
-        Student catherine = manager.save(new Student("Catherine"));
-        Student audrey = manager.save(new Student("Audrey"));
-        int startCount = manager.recordsCount(Student.class);
+        Dude catherine = manager.save(new Dude("Catherine"));
+        Dude audrey = manager.save(new Dude("Audrey"));
+        long startCount = manager.recordsCount(Dude.class);
 
         manager.delete(catherine, audrey);
-        int endCount = manager.recordsCount(Student.class);
+        long endCount = manager.recordsCount(Dude.class);
 
         assertThat(endCount).isLessThanOrEqualTo(startCount - 2);
     }
 
     @Test
     void WhenUpdatingRecordAndFindItByIdThenReturnTheUpdatedRecord() {
-        Student savedStudent = manager.save(new Student("Donna"));
-        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        Dude savedDude = manager.save(new Dude("Donna"));
+        Dude foundDude = manager.findById(savedDude.getId(), Dude.class).get();
 
-        foundStudent.setFirstName("Don");
-        manager.update(foundStudent);
-        Student foundUpdatedStudent = manager.findById(foundStudent.getId(), Student.class).get();
+        foundDude.setFirstName("Don");
+        manager.update(foundDude);
+        Dude foundUpdatedDude = manager.findById(foundDude.getId(), Dude.class).get();
 
-        assertThat(foundUpdatedStudent.getFirstName()).isEqualTo(foundStudent.getFirstName());
-        assertThat(foundUpdatedStudent).usingRecursiveComparison().isEqualTo(foundStudent);
+        assertThat(foundUpdatedDude.getFirstName()).isEqualTo(foundDude.getFirstName());
+        assertThat(foundUpdatedDude).usingRecursiveComparison().isEqualTo(foundDude);
 
-        assertThat(createdStudentsTable).column(0)
-                .value().isEqualTo(foundStudent.getId())
+        assertThat(createdDudesTable).column(0)
+                .value().isEqualTo(foundDude.getId())
                 .column(1)
                 .value().isEqualTo("Don");
+
+        output(createdDudesTable).toFile("tableFromTest");
     }
 
     @Test
     void canUpdateRecord() {
-        Student savedStudent = manager.save(new Student("Donna"));
-        Student returnedStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        Dude savedDude = manager.save(new Dude("Donna"));
+        Dude returnedDude = manager.findById(savedDude.getId(), Dude.class).get();
 
-        savedStudent.setFirstName("Dina");
-        manager.update(savedStudent);
-        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        savedDude.setFirstName("Dina");
+        manager.update(savedDude);
+        Dude foundDude = manager.findById(savedDude.getId(), Dude.class).get();
 
-        assertThat(foundStudent.getFirstName()).isNotEqualTo(returnedStudent.getFirstName());
-        assertThat(foundStudent).usingRecursiveComparison().isNotEqualTo(returnedStudent);
+        assertThat(foundDude.getFirstName()).isNotEqualTo(returnedDude.getFirstName());
+        assertThat(foundDude).usingRecursiveComparison().isNotEqualTo(returnedDude);
 
-        assertThat(createdStudentsTable).column(0)
-                .value().isEqualTo(savedStudent.getId())
+        assertThat(createdDudesTable).column(0)
+                .value().isEqualTo(savedDude.getId())
                 .column(1)
                 .value().isEqualTo("Dina");
+
+        output(createdDudesTable).toFile("tableFromTest");
+    }
+
+    @Data
+    @Entity
+    static class Dude {
+        @Id
+        Long id;
+        String firstName;
+        String secondName;
+        Integer age;
+        LocalDate graduateAcademy;
+        public Dude(String firstName) {
+            this(firstName, "", 36, LocalDate.now());
+        }
+
+        public Dude(String firstName, String secondName, Integer age, LocalDate graduateAcademy) {
+            this.firstName = firstName;
+            this.secondName = secondName;
+            this.age = age;
+            this.graduateAcademy = graduateAcademy;
+        }
+
+        private Dude() {
+        }
     }
 
 }

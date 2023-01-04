@@ -20,11 +20,12 @@ public class AnnotationUtils {
     }
 
     public static String getTableName(Class<?> clss) {
+        String tableName = clss.getSimpleName().toLowerCase() + "s";
         if (clss.isAnnotationPresent(Table.class)) {
-            String tableName = clss.getAnnotation(Table.class).name();
-            return tableName.equals("") ? (clss.getSimpleName() + "s") : tableName;
+            String annotatedTableName = clss.getAnnotation(Table.class).name();
+            return annotatedTableName.equals("") ? tableName : annotatedTableName;
         } else {
-            return clss.getSimpleName() + "s";
+            return tableName;
         }
     }
 
@@ -36,13 +37,14 @@ public class AnnotationUtils {
             String constraints =
                     (isUnique(declaredField) ? " UNIQUE " : "") +
                             (canBeNull(declaredField) ? "" : " NOT NULL");
-            String idTag = sqlIdStatement(declaredField);
+            String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
             switch (fieldTypeName) {
-                case "String" -> columnNames.add(columnName + SQLDialect.STRING + idTag + constraints);
-                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idTag + constraints);
-                case "LocalDate" -> columnNames.add(columnName + SQLDialect.DATETIME + idTag + constraints);
-                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + idTag + constraints);
-                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INT + idTag + constraints);
+                case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
+                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
+                case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
+                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
+                case "Integer", "int" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
+                case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
                 default -> columnNames.add("");
             }
         }
@@ -59,15 +61,24 @@ public class AnnotationUtils {
     }
 
     public static boolean isUnique(Field field) {
-        return field.getAnnotation(Column.class).unique();
+        return field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).unique();
     }
 
     public static boolean canBeNull(Field field) {
-        return field.getAnnotation(Column.class).nullable();
+        return field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).nullable();
     }
 
-    private static String sqlIdStatement(Field declaredField) {
-        return declaredField.isAnnotationPresent(Id.class) ? SQLDialect.ID : "";
+    private static String autoincrementPrimaryKeyTag(Field declaredField) {
+        String columnDefinition = "";
+        if (declaredField.isAnnotationPresent(Column.class)) {
+            columnDefinition = declaredField.getAnnotation(Column.class).columnDefinition();
+        }
+
+        String autoincrementTag = columnDefinition.equals("serial") ?
+                SQLDialect.AUTO_INCREMENT_POSTGRE + SQLDialect.PRIMARY_KEY :
+                SQLDialect.AUTO_INCREMENT_H2 + SQLDialect.PRIMARY_KEY;
+
+        return declaredField.isAnnotationPresent(Id.class) ? autoincrementTag : "";
     }
 
     public static String getIdFieldName(Class<?> clss) {
