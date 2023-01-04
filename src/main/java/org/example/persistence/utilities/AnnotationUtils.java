@@ -50,10 +50,10 @@ public class AnnotationUtils {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
                 case "Long", "long" ->
                         columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
+                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN   + constraints);
                 case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
-                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
                 case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
                 default -> columnNames.add("");
             }
