@@ -188,9 +188,7 @@ public class ORManagerImpl implements ORManager {
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
                     default -> {
                         try {
-                            System.out.println("+++++++++++++++++++++");
                             Object byId = findById(rs.getLong(columnIndex), declaredFields[i].getType()).get();
-                            System.out.println("------------------------");
                             declaredFields[i].set(entityToFind, byId);
                         } catch (NoSuchElementException ex) {
                             ExceptionHandler.noSuchElement(ex);
