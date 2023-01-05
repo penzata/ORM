@@ -14,7 +14,7 @@ public class ExceptionHandler {
     }
 
     public static void sql(SQLException ex) {
-        log.error("There's some problem with the database access" +
+        log.atError().log("There's some problem with the database access" +
                 " or the SQL statement:", ex);
     }
 
