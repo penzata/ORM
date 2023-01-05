@@ -37,6 +37,7 @@ public class ORManagerImpl implements ORManager {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
+                log.atDebug().log("table create statement: \n{}", sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
@@ -101,7 +102,7 @@ public class ORManagerImpl implements ORManager {
                     case "Integer","int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
                     case "Boolean","boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    default -> ps.setLong(i, Long.parseLong(declaredFields[i].get(o).toString()));
+                    default -> ps.setLong(i, (Long) declaredFields[i].get(o));
                 }
             }
         } catch (IllegalAccessException e) {
@@ -168,11 +169,12 @@ public class ORManagerImpl implements ORManager {
                 int columnIndex = i + 1;
                 switch (fieldTypeName) {
                     case "String" -> declaredFields[i].set(entityToFind, rs.getString(columnIndex));
-                    case "Long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
-                    case "Integer" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
-                    case "Boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
-                    case "Double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
+                    case "Long", "long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
+                    case "Integer", "int" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
+                    case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
+                    case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                    default -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
                 }
             }
         } catch (IllegalAccessException e) {
@@ -207,6 +209,7 @@ public class ORManagerImpl implements ORManager {
             replacePlaceholdersInStatement(o, ps);
             Field[] fields = o.getClass().getDeclaredFields();
             int placeholderForId = fields.length;
+            fields[0].setAccessible(true);
             ps.setString(placeholderForId, fields[0].get(o).toString());
             ps.executeUpdate();
         } catch (SQLException ex) {
