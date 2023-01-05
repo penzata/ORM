@@ -26,6 +26,11 @@ public class AnnotationUtils {
         }
     }
 
+    /**
+     * @param clss Class.
+     * @return Collection of strings which contains the names of the columns (taken from the entity's fields)
+     * needed for CREATE TABLE sql statement.
+     */
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
         List<String> keys = new ArrayList<>();
@@ -33,19 +38,20 @@ public class AnnotationUtils {
             String fieldTypeName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
             String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
-            String constraints;
+            String constraints = (isUnique(declaredField) ? " UNIQUE " : "") +
+                            (canBeNull(declaredField) ? "" : " NOT NULL");
           
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 fieldTypeName = "foreign key";
                 columnName = declaredField.getAnnotation(ManyToOne.class).name();
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
                 String referenceTableName = declaredField.getType().getAnnotation(Table.class).name();
-                keys.add("FOREIGN KEY(" + columnName + ") REFERENCES " + referenceTableName + "(id)");
-            } else {
-                constraints =
-                        (isUnique(declaredField) ? " UNIQUE " : "") +
-                        (canBeNull(declaredField) ? "" : " NOT NULL");
+                String namedFk = declaredField.getType().getSimpleName().toLowerCase();
+                String fkStatement = String.format("CONSTRAINT fk_%s FOREIGN KEY(%s) REFERENCES %s(id)",
+                        namedFk, columnName, referenceTableName);
+                keys.add(fkStatement);
             }
+
             switch (fieldTypeName) {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
                 case "Long", "long" ->
