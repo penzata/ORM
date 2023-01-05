@@ -23,8 +23,4 @@ public class Academy {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return String.valueOf(id);
-    }
 }
