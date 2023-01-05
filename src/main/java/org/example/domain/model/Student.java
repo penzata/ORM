@@ -15,11 +15,10 @@ public class Student implements Serializable {
     private Long id;
     @Column(name = "first_name", nullable = false)
     private String firstName;
-
     @Column(name = "second_name", nullable = false)
     private String secondName;
     @Column(name = "age", nullable = false)
-    private int age;
+    private Integer age;
     @Column(name = "graduate_academy")
     private LocalDate graduateAcademy;
     @ManyToOne(targetEntity = Academy.class, name ="academy_id")
@@ -28,7 +27,7 @@ public class Student implements Serializable {
     Student() {
     }
 
-    public Student(String firstName, String secondName, int age, LocalDate graduateAcademy) {
+    public Student(String firstName, String secondName, Integer age, LocalDate graduateAcademy) {
         this.firstName = firstName;
         this.secondName = secondName;
         this.age = age;
