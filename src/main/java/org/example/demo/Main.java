@@ -15,7 +15,7 @@ public class Main {
         orManager.register(Academy.class, Student.class);
         Academy academy = new Academy("SoftServe");
         orManager.save(academy);
-        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
+        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"),academy);
         student.setAcademy(academy);
         orManager.save(student);
         orManager.findById(2, Student.class);

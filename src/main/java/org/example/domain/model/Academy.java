@@ -22,4 +22,9 @@ public class Academy {
     public Academy(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(id);
+    }
 }

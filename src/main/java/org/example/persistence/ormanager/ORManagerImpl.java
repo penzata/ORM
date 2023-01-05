@@ -102,7 +102,7 @@ public class ORManagerImpl implements ORManager {
                     case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
                     case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    default -> ps.setObject(i, declaredFields[i].get(o));
+                    default -> ps.setObject(i, declaredFields[i].get(o).toString());
                 }
             }
         } catch (IllegalAccessException e) {
@@ -174,7 +174,7 @@ public class ORManagerImpl implements ORManager {
                     case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
                     case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
-                    default -> declaredFields[i].set(entityToFind, rs.getObject(columnIndex));
+                    default -> declaredFields[i].set(entityToFind, rs.getObject(columnIndex).toString());
                 }
             }
         } catch (IllegalAccessException e) {

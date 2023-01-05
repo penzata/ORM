@@ -32,4 +32,9 @@ public class Student {
         this.age = age;
         this.graduateAcademy = graduateAcademy;
     }
+
+    public Student(String firstName, String secondName, Integer age, LocalDate graduateAcademy, Academy academy) {
+        this(firstName, secondName, age, graduateAcademy);
+        this.academy = academy;
+    }
 }
