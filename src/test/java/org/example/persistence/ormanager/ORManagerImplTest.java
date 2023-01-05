@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -33,13 +34,14 @@ class ORManagerImplTest {
     Connection connection;
     PreparedStatement st;
     Table createdStudentsTable;
-    Student Student1;
+    Table createdAcademiesTable;
+    Student student1;
 
     @AfterEach
     void tearDown() throws SQLException {
-        st = connection.prepareStatement("DROP TABLE students");
+        st = connection.prepareStatement("DROP TABLE IF EXISTS students");
         st.executeUpdate();
-        st = connection.prepareStatement("DROP TABLE academies");
+        st = connection.prepareStatement("DROP TABLE IF EXISTS academies");
         st.executeUpdate();
 
         if (connection != null) {
@@ -60,13 +62,14 @@ class ORManagerImplTest {
         manager = Utils.withDataSource(dataSource);
         manager.register(Academy.class, Student.class);
         connection = dataSource.getConnection();
-        createdStudentsTable = new Table(dataSource, "Students");
-        Student1 = new Student("Bob", "", 66, LocalDate.now());
+        createdStudentsTable = new Table(dataSource, "students");
+        createdAcademiesTable = new Table(dataSource, "academies");
+        student1 = new Student("Bob", "", 66, LocalDate.now());
     }
 
     @Test
     void CanSaveOneStudentToDatabaseAndReturnStudentWithId() {
-        Student savedStudent = manager.save(Student1);
+        Student savedStudent = manager.save(student1);
 
         assertThat(savedStudent.getId()).isNotNull();
 
@@ -75,7 +78,7 @@ class ORManagerImplTest {
 
     @Test
     void CanSaveTwoStudentsToDatabaseAndReturnStudentsWithId() {
-        Student savedStudent = manager.save(Student1);
+        Student savedStudent = manager.save(student1);
         Student savedSecondStudent = manager.save(new Student("Dale", "", 66, LocalDate.now()));
 
         assertThat(savedStudent.getId()).isPositive();
@@ -176,9 +179,9 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
-        manager.save(Student1);
+        manager.save(student1);
 
-        boolean result = manager.delete(Student1);
+        boolean result = manager.delete(student1);
 
         assertTrue(result);
     }
@@ -261,9 +264,11 @@ class ORManagerImplTest {
         Student st3 = new Student("Kurt", "Russell", 44, LocalDate.now());
 
         Academy ac1 = new Academy("SoftServe");
+        manager.save(ac1);
         Academy ac2 = new Academy("Khan");
 
         st1.setAcademy(ac1);
+        log.atError().log("{}", st1);
 //        st2.setAcademy(ac1);
 //        st3.setAcademy(ac2);
 
@@ -272,6 +277,14 @@ class ORManagerImplTest {
         manager.save(st3);
 
         output(createdStudentsTable).toConsole();
+    }
+
+    @Test
+    void stuffzz() {
+        for (Field declaredField : Student.class.getDeclaredFields()) {
+            String fieldTypeName = declaredField.getType().getSimpleName();
+            log.atDebug().log(fieldTypeName);
+        }
     }
 
 }
