@@ -1,6 +1,6 @@
 package org.example.demo;
 
-import org.example.domain.model.SchoolClass;
+import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.utilities.Utils;
@@ -12,12 +12,15 @@ public class Main {
         String path = "h2.properties";
         ORManager orManager = Utils.withPropertiesFrom(path);
 
-        orManager.register(SchoolClass.class);
-        orManager.register(Student.class);
-        SchoolClass someClass = new SchoolClass("12A");
-        orManager.save(someClass);
-        orManager.save(new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"), someClass));
-        orManager.findById(2, Student.class);
-        orManager.findAll(Student.class);
+        orManager.register(Academy.class, Student.class);
+        Academy academy = new Academy("SoftServe");
+        orManager.save(academy);
+        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
+        student.setAcademy(academy);
+        orManager.save(student);
+//        orManager.findById(2, Student.class);
+//        orManager.findAll(Student.class);
+        student.setAge(44);
+        orManager.update(student);
     }
 }

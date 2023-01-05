@@ -79,7 +79,7 @@ class StudentTest {
         assertNull(student.getId());
         assertNull(student.getFirstName());
         assertNull(student.getSecondName());
-        assertEquals(0, student.getAge());
+        assertEquals(null, student.getAge());
         assertNull(student.getGraduateAcademy());
     }
 

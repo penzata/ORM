@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -33,13 +34,14 @@ class ORManagerImplTest {
     Connection connection;
     PreparedStatement st;
     Table createdStudentsTable;
-    Student Student1;
+    Table createdAcademiesTable;
+    Student student1;
 
     @AfterEach
     void tearDown() throws SQLException {
-        st = connection.prepareStatement("DROP TABLE students");
+        st = connection.prepareStatement("DROP TABLE IF EXISTS students");
         st.executeUpdate();
-        st = connection.prepareStatement("DROP TABLE academies");
+        st = connection.prepareStatement("DROP TABLE IF EXISTS academies");
         st.executeUpdate();
 
         if (connection != null) {
@@ -60,13 +62,14 @@ class ORManagerImplTest {
         manager = Utils.withDataSource(dataSource);
         manager.register(Academy.class, Student.class);
         connection = dataSource.getConnection();
-        createdStudentsTable = new Table(dataSource, "Students");
-        Student1 = new Student("Bob", "", 66, LocalDate.now());
+        createdStudentsTable = new Table(dataSource, "students");
+        createdAcademiesTable = new Table(dataSource, "academies");
+        student1 = new Student("Bob", "", 66, LocalDate.now());
     }
 
     @Test
     void CanSaveOneStudentToDatabaseAndReturnStudentWithId() {
-        Student savedStudent = manager.save(Student1);
+        Student savedStudent = manager.save(student1);
 
         assertThat(savedStudent.getId()).isNotNull();
 
@@ -75,7 +78,7 @@ class ORManagerImplTest {
 
     @Test
     void CanSaveTwoStudentsToDatabaseAndReturnStudentsWithId() {
-        Student savedStudent = manager.save(Student1);
+        Student savedStudent = manager.save(student1);
         Student savedSecondStudent = manager.save(new Student("Dale", "", 66, LocalDate.now()));
 
         assertThat(savedStudent.getId()).isPositive();
@@ -176,10 +179,9 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThenReturnTrue() {
+        manager.save(student1);
 
-        manager.save(Student1);
-
-        boolean result = manager.delete(Student1);
+        boolean result = manager.delete(student1);
 
         assertTrue(result);
     }
@@ -252,6 +254,55 @@ class ORManagerImplTest {
                 .value().isEqualTo("Dina");
 
         output(createdStudentsTable).toFile("tableFromTest");
+    }
+
+    //todo tests below to be deleated
+    @Test
+    void stuff() {
+        Student st1 = new Student("Don", "Johnson", 63, LocalDate.now());
+        Student st2 = new Student("Emma", "Thompson", 56, LocalDate.now());
+        Student st3 = new Student("Kurt", "Russell", 44, LocalDate.now());
+
+        Academy ac1 = new Academy("SoftServe");
+        manager.save(ac1);
+        Academy ac2 = new Academy("Khan");
+        manager.save(ac2);
+
+        st1.setAcademy(ac1);
+        log.atError().log("{}", st1);
+        st2.setAcademy(ac1);
+        st3.setAcademy(ac2);
+
+        manager.save(st1);
+        manager.save(st2);
+        manager.save(st3);
+
+        output(createdStudentsTable).toConsole();
+        output(createdAcademiesTable).toConsole();
+
+        assertThat(createdStudentsTable).hasNumberOfRows(3);
+        assertThat(createdAcademiesTable).hasNumberOfRows(2);
+    }
+
+    @Test
+    void stuffzz() {
+        for (Field declaredField : Student.class.getDeclaredFields()) {
+            String fieldTypeName = declaredField.getType().getSimpleName();
+            log.atDebug().log(fieldTypeName);
+        }
+    }
+
+    @Test
+    void fromMain() {
+        Academy academy = new Academy("SoftServe");
+        manager.save(academy);
+        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
+        student.setAcademy(academy);
+        manager.save(student);
+        manager.findById(2, Student.class);
+        manager.findAll(Student.class);
+        student.setAge(44);
+        manager.update(student);
     }
 
 }

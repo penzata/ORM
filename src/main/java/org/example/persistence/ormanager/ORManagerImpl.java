@@ -1,8 +1,8 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Entity;
 import org.example.exceptionhandler.ExceptionHandler;
+import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.SerializationUtil;
 
@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.*;
+import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
+import static org.example.persistence.utilities.AnnotationUtils.getTableName;
 
 
 @Slf4j
@@ -37,6 +38,7 @@ public class ORManagerImpl implements ORManager {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
+                log.atDebug().log("table create statement: \n{}", sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
                 } catch (SQLException e) {
@@ -63,7 +65,6 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
         }
-        SerializationUtil.serialize(o);
         return o;
     }
 
@@ -97,11 +98,22 @@ public class ORManagerImpl implements ORManager {
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
-                    case "Long","long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
-                    case "Integer","int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean","boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
+                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    default -> ps.setLong(i, Long.parseLong(declaredFields[i].get(o).toString()));
+                    default -> {
+                        Object objectField = declaredFields[i].get(o);
+                        log.atError().log("Academy field of Student object: {}", objectField);
+                        Object objectFiledIdValue = null;
+                        if (objectField != null) {
+                            Field[] declaredFields1 = declaredFields[i].getType().getDeclaredFields();
+                            declaredFields1[0].setAccessible(true);
+                            objectFiledIdValue = declaredFields1[0].get(objectField);
+                            log.atError().log("id value of Student's Academy object field: {}", objectFiledIdValue);
+                        }
+                        ps.setObject(i, objectFiledIdValue);
+                    }
                 }
             }
         } catch (IllegalAccessException e) {
@@ -168,11 +180,19 @@ public class ORManagerImpl implements ORManager {
                 int columnIndex = i + 1;
                 switch (fieldTypeName) {
                     case "String" -> declaredFields[i].set(entityToFind, rs.getString(columnIndex));
-                    case "Long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
-                    case "Integer" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
-                    case "Boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
-                    case "Double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
+                    case "Long", "long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
+                    case "Integer", "int" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
+                    case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
+                    case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                    default -> {
+                        try {
+                            Object byId = findById(rs.getLong(columnIndex), declaredFields[i].getType()).get();
+                            declaredFields[i].set(entityToFind, byId);
+                        } catch (RuntimeException e) {
+                            declaredFields[i].set(entityToFind, null);
+                        }
+                    }
                 }
             }
         } catch (IllegalAccessException e) {
@@ -207,6 +227,7 @@ public class ORManagerImpl implements ORManager {
             replacePlaceholdersInStatement(o, ps);
             Field[] fields = o.getClass().getDeclaredFields();
             int placeholderForId = fields.length;
+            fields[0].setAccessible(true);
             ps.setString(placeholderForId, fields[0].get(o).toString());
             ps.executeUpdate();
         } catch (SQLException ex) {
@@ -250,14 +271,13 @@ public class ORManagerImpl implements ORManager {
 
         Field idField = o.getClass().getDeclaredFields()[0];
         idField.setAccessible(true);
-        try(Connection connection = dataSource.getConnection()){
+        try (Connection connection = dataSource.getConnection()) {
             PreparedStatement ps = connection.prepareStatement(getTableForDelete(o.getClass()));
-            ps.setString(1,idField.get(o).toString());
-             ps.executeUpdate();
+            ps.setString(1, idField.get(o).toString());
+            ps.executeUpdate();
             idField.set(o, null);
             return true;
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             log.error("Exception has occurred: ", ex);
         }
         return false;
