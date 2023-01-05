@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
-import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -98,11 +97,23 @@ public class ORManagerImpl implements ORManager {
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
-                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Long", "long" -> ps.setLong(i, declaredFields[i].getLong(o));
                     case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "Boolean", "boolean" -> ps.setBoolean(i, declaredFields[i].getBoolean(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    default -> ps.setObject(i, declaredFields[i].get(o).toString());
+                    default -> {
+                        Object objectField = declaredFields[i].get(o);
+                        log.atError().log("Academy field of Student object: {}", objectField);
+                        Object objectFiledIdValue = null;
+                        if (objectField != null) {
+                            Field[] declaredFields1 = declaredFields[i].getType().getDeclaredFields();
+                            declaredFields1[0].setAccessible(true);
+                            objectFiledIdValue = declaredFields1[0].get(objectField);
+                            log.atError().log("id value of Student's Academy object field: {}", objectFiledIdValue);
+                        }
+                        ps.setObject(i, objectFiledIdValue);
+                    }
+
                 }
             }
         } catch (IllegalAccessException e) {
@@ -174,7 +185,7 @@ public class ORManagerImpl implements ORManager {
                     case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
                     case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
-                    default -> declaredFields[i].set(entityToFind, rs.getObject(columnIndex).toString());
+                    default -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
                 }
             }
         } catch (IllegalAccessException e) {
@@ -263,7 +274,6 @@ public class ORManagerImpl implements ORManager {
             log.error("Exception has occurred: ", ex);
         }
         return false;
-
     }
 
     @Override
