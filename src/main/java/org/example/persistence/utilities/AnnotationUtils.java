@@ -49,7 +49,8 @@ public class AnnotationUtils {
                 String namedFk = declaredField.getType().getSimpleName().toLowerCase();
                 String fkStatement = String.format("CONSTRAINT fk_%s FOREIGN KEY(%s) REFERENCES %s(id)",
                         namedFk, columnName, referenceTableName);
-                keys.add(fkStatement);
+                String refActions = "\nON DELETE SET NULL\nON UPDATE CASCADE";
+                keys.add(fkStatement + refActions);
             }
 
             switch (fieldTypeName) {
