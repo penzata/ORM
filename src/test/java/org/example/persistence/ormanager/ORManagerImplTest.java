@@ -277,6 +277,10 @@ class ORManagerImplTest {
         manager.save(st3);
 
         output(createdStudentsTable).toConsole();
+        output(createdAcademiesTable).toConsole();
+
+        assertThat(createdStudentsTable).hasNumberOfRows(3);
+        assertThat(createdAcademiesTable).hasNumberOfRows(1);
     }
 
     @Test
