@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
-import org.example.persistence.utilities.SerializationUtil;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -14,7 +13,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
@@ -165,63 +163,6 @@ public class ORManagerImpl implements ORManager {
         return entity != null ? Optional.of(entity) : Optional.empty();
     }
 
-    /**
-     * @param rs   ResultSet from SELECT sql statement.
-     * @param clss Class.
-     * @return Generic entity object with field values set from the DB record value.
-     * @throws SQLException
-     */
-    private <T> T extractEntityFromResultSet(ResultSet rs, Class<T> clss) throws SQLException {
-        T entityToFind = createNewInstance(clss);
-        try {
-            Field[] declaredFields = clss.getDeclaredFields();
-            for (int i = 0; i < declaredFields.length; i++) {
-                declaredFields[i].setAccessible(true);
-                String fieldTypeName = declaredFields[i].getType().getSimpleName();
-                int columnIndex = i + 1;
-                switch (fieldTypeName) {
-                    case "String" -> declaredFields[i].set(entityToFind, rs.getString(columnIndex));
-                    case "Long", "long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
-                    case "Integer", "int" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
-                    case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
-                    case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
-                    case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
-                    default -> {
-                        try {
-                            Object byId = findById(rs.getLong(columnIndex), declaredFields[i].getType()).get();
-                            declaredFields[i].set(entityToFind, byId);
-                        } catch (NoSuchElementException ex) {
-                            ExceptionHandler.noSuchElement(ex);
-                            declaredFields[i].set(entityToFind, null);
-                        }
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-        return entityToFind;
-    }
-
-    /**
-     * Create and initialize a new instance from the no-args constructor of the provided class.
-     *
-     * @param cls Class.
-     * @return New empty generic object of the given class.
-     */
-    private <T> T createNewInstance(Class<T> cls) {
-        T newObject = null;
-        try {
-            Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
-            declaredConstructor.setAccessible(true);
-            newObject = declaredConstructor.newInstance();
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException e) {
-            ExceptionHandler.newInstance(e);
-        }
-        return newObject;
-    }
-
     @Override
     public <T> T update(T o) {
         try (Connection conn = dataSource.getConnection();
@@ -299,5 +240,62 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.sql(e);
         }
         return count;
+    }
+
+    /**
+     * @param rs   ResultSet from SELECT sql statement.
+     * @param clss Class.
+     * @return Generic entity object with field values set from the DB record value.
+     * @throws SQLException
+     */
+    private <T> T extractEntityFromResultSet(ResultSet rs, Class<T> clss) throws SQLException {
+        T entityToFind = createNewInstance(clss);
+        try {
+            Field[] declaredFields = clss.getDeclaredFields();
+            for (int i = 0; i < declaredFields.length; i++) {
+                declaredFields[i].setAccessible(true);
+                String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                int columnIndex = i + 1;
+                switch (fieldTypeName) {
+                    case "String" -> declaredFields[i].set(entityToFind, rs.getString(columnIndex));
+                    case "Long", "long" -> declaredFields[i].set(entityToFind, rs.getLong(columnIndex));
+                    case "Integer", "int" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
+                    case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
+                    case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
+                    case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                    default -> {
+                        long columnValue = rs.getLong(columnIndex);
+                        if (columnValue != 0) {
+                            Object byId = findById(columnValue, declaredFields[i].getType()).get();
+                            declaredFields[i].set(entityToFind, byId);
+                        } else {
+                            declaredFields[i].set(entityToFind, null);
+                        }
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return entityToFind;
+    }
+
+    /**
+     * Create and initialize a new instance from the no-args constructor of the provided class.
+     *
+     * @param cls Class.
+     * @return New empty generic object of the given class.
+     */
+    private <T> T createNewInstance(Class<T> cls) {
+        T newObject = null;
+        try {
+            Constructor<T> declaredConstructor = cls.getDeclaredConstructor();
+            declaredConstructor.setAccessible(true);
+            newObject = declaredConstructor.newInstance();
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            ExceptionHandler.newInstance(e);
+        }
+        return newObject;
     }
 }
