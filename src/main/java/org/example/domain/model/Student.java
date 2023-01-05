@@ -3,13 +3,12 @@ package org.example.domain.model;
 import lombok.Data;
 import org.example.persistence.annotations.*;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
 @Entity
 @Table(name = "students")
-public class Student implements Serializable {
+public class Student {
     @Id
     @Column(name = "id")
     private Long id;
@@ -21,9 +20,9 @@ public class Student implements Serializable {
     private Integer age;
     @Column(name = "graduate_academy")
     private LocalDate graduateAcademy;
-    @ManyToOne(targetEntity = Academy.class, name ="academy_id")
+    @ManyToOne(targetEntity = Academy.class, name = "academy_id")
     private Academy academy;
-  
+
     Student() {
     }
 

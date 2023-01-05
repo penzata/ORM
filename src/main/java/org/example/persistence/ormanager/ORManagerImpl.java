@@ -65,7 +65,6 @@ public class ORManagerImpl implements ORManager {
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
         }
-        SerializationUtil.serialize(o);
         return o;
     }
 
