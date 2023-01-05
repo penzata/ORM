@@ -62,7 +62,6 @@ public class AnnotationUtils {
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN   + constraints);
                 case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
                 case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
-                default -> columnNames.add("");
             }
             columnNames.addAll(keys);
         }

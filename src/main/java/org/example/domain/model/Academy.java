@@ -19,12 +19,19 @@ public class Academy {
 //    @OneToMany(mappedBy = "academy")
 //    List<Student> students;
 
+
+    public Academy() {
+    }
+
     public Academy(String name) {
         this.name = name;
     }
 
     @Override
     public String toString() {
-        return String.valueOf(id);
+        return "Academy{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
