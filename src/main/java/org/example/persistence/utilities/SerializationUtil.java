@@ -9,7 +9,7 @@ import java.util.List;
 @Slf4j
 public class SerializationUtil {
     private static final List<Object> serializedData = new ArrayList<>();
-    private static final String SUFFIX = "sSerTestList.ser";
+    private static final String SUFFIX = "Serialization.ser";
 
     private SerializationUtil() {
     }
