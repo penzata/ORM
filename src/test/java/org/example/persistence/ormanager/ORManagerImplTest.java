@@ -266,11 +266,12 @@ class ORManagerImplTest {
         Academy ac1 = new Academy("SoftServe");
         manager.save(ac1);
         Academy ac2 = new Academy("Khan");
+        manager.save(ac2);
 
         st1.setAcademy(ac1);
         log.atError().log("{}", st1);
-//        st2.setAcademy(ac1);
-//        st3.setAcademy(ac2);
+        st2.setAcademy(ac1);
+        st3.setAcademy(ac2);
 
         manager.save(st1);
         manager.save(st2);
@@ -280,7 +281,7 @@ class ORManagerImplTest {
         output(createdAcademiesTable).toConsole();
 
         assertThat(createdStudentsTable).hasNumberOfRows(3);
-        assertThat(createdAcademiesTable).hasNumberOfRows(1);
+        assertThat(createdAcademiesTable).hasNumberOfRows(2);
     }
 
     @Test
@@ -289,6 +290,19 @@ class ORManagerImplTest {
             String fieldTypeName = declaredField.getType().getSimpleName();
             log.atDebug().log(fieldTypeName);
         }
+    }
+
+    @Test
+    void fromMain() {
+        Academy academy = new Academy("SoftServe");
+        manager.save(academy);
+        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
+        student.setAcademy(academy);
+        manager.save(student);
+        manager.findById(2, Student.class);
+        manager.findAll(Student.class);
+        student.setAge(44);
+        manager.update(student);
     }
 
 }
