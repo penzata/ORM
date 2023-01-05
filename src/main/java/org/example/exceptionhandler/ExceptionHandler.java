@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
 
 @Slf4j
 public class ExceptionHandler {
@@ -33,5 +34,9 @@ public class ExceptionHandler {
 
     public static void invocationException(InvocationTargetException ex) {
         log.atError().log("The underlying method throws an exception:", ex);
+    }
+
+    public static void noSuchElement(NoSuchElementException ex) {
+        log.atError().log("The element being requested does not exist!", ex);
     }
 }

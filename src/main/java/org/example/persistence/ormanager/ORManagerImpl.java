@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
@@ -187,9 +188,12 @@ public class ORManagerImpl implements ORManager {
                     case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
                     default -> {
                         try {
+                            System.out.println("+++++++++++++++++++++");
                             Object byId = findById(rs.getLong(columnIndex), declaredFields[i].getType()).get();
+                            System.out.println("------------------------");
                             declaredFields[i].set(entityToFind, byId);
-                        } catch (RuntimeException e) {
+                        } catch (NoSuchElementException ex) {
+                            ExceptionHandler.noSuchElement(ex);
                             declaredFields[i].set(entityToFind, null);
                         }
                     }
