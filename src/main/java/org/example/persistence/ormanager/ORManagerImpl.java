@@ -1,8 +1,8 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.persistence.annotations.Entity;
 import org.example.exceptionhandler.ExceptionHandler;
+import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 import org.example.persistence.utilities.SerializationUtil;
 
@@ -17,7 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.*;
+import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
+import static org.example.persistence.utilities.AnnotationUtils.getTableName;
 
 
 @Slf4j
@@ -98,9 +99,9 @@ public class ORManagerImpl implements ORManager {
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
                 switch (fieldTypeName) {
                     case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
-                    case "Long","long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
-                    case "Integer","int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean","boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
+                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
                     default -> ps.setObject(i, declaredFields[i].get(o));
                 }
@@ -253,14 +254,13 @@ public class ORManagerImpl implements ORManager {
 
         Field idField = o.getClass().getDeclaredFields()[0];
         idField.setAccessible(true);
-        try(Connection connection = dataSource.getConnection()){
+        try (Connection connection = dataSource.getConnection()) {
             PreparedStatement ps = connection.prepareStatement(getTableForDelete(o.getClass()));
-            ps.setString(1,idField.get(o).toString());
-             ps.executeUpdate();
+            ps.setString(1, idField.get(o).toString());
+            ps.executeUpdate();
             idField.set(o, null);
             return true;
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             log.error("Exception has occurred: ", ex);
         }
         return false;
