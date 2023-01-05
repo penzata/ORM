@@ -256,7 +256,7 @@ class ORManagerImplTest {
         output(createdStudentsTable).toFile("tableFromTest");
     }
 
-    //todo to be deleated
+    //todo tests below to be deleated
     @Test
     void stuff() {
         Student st1 = new Student("Don", "Johnson", 63, LocalDate.now());
