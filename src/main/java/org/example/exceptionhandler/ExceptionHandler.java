@@ -32,11 +32,4 @@ public class ExceptionHandler {
         log.atError().log("An error occurred when reading from the input stream:", ex);
     }
 
-    public static void invocationException(InvocationTargetException ex) {
-        log.atError().log("The underlying method throws an exception:", ex);
-    }
-
-    public static void noSuchElement(NoSuchElementException ex) {
-        log.atError().log("The element being requested does not exist!", ex);
-    }
 }
