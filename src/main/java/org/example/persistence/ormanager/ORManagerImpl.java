@@ -276,7 +276,13 @@ public class ORManagerImpl implements ORManager {
                     case "Integer", "int" -> declaredFields[i].set(entityToFind, rs.getInt(columnIndex));
                     case "Boolean", "boolean" -> declaredFields[i].set(entityToFind, rs.getBoolean(columnIndex));
                     case "Double", "double" -> declaredFields[i].set(entityToFind, rs.getDouble(columnIndex));
-                    case "LocalDate" -> declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                    case "LocalDate" -> {
+                        if (rs.getDate(columnIndex) != null) {
+                            declaredFields[i].set(entityToFind, rs.getDate(columnIndex).toLocalDate());
+                        } else {
+                            declaredFields[i].set(entityToFind, rs.getDate(columnIndex));
+                        }
+                    }
                     default -> {
                         long columnValue = rs.getLong(columnIndex);
                         if (columnValue != 0) {
