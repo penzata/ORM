@@ -11,7 +11,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -91,20 +90,6 @@ class ORManagerTest {
 
         assertThat(createdStudentsTable).hasNumberOfRows(3);
         assertThat(createdAcademiesTable).hasNumberOfRows(2);
-    }
-
-    //todo to be deleted
-    @Test
-    void fromMain() {
-        Academy academy = new Academy("SoftServe");
-        ormManager.save(academy);
-        Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
-        student.setAcademy(academy);
-        ormManager.save(student);
-        ormManager.findById(2, Student.class);
-        ormManager.findAll(Student.class);
-        student.setAge(44);
-        ormManager.update(student);
     }
 
 }
