@@ -29,7 +29,8 @@ public class SQLDialect {
 
     private SQLDialect() {
     }
-    public static String sqlDeleteStatement(Class<?> cls){
+
+    public static String sqlDeleteStatement(Class<?> cls) {
         String tableName = AnnotationUtils.getTableName(cls);
         return String.format("DELETE FROM %s WHERE id = ?", tableName);
     }
@@ -39,10 +40,10 @@ public class SQLDialect {
         List<String> columnNames = new ArrayList<>();
         List<String> placeholders = new ArrayList<>();
         for (Field declaredField : declaredFields) {
-            if (declaredField.isAnnotationPresent(ManyToOne.class)){
+            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 columnNames.add(AnnotationUtils.getColumnNameFromManyToOne(declaredField));
                 placeholders.add("?");
-            }else if (!declaredField.isAnnotationPresent(Id.class)) {
+            } else if (!declaredField.isAnnotationPresent(Id.class)) {
                 columnNames.add(AnnotationUtils.getColumnName(declaredField));
                 placeholders.add("?");
             }
