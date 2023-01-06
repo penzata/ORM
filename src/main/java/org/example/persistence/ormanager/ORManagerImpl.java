@@ -97,24 +97,32 @@ public class ORManagerImpl implements ORManager {
                 declaredFields[i].setAccessible(true);
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
                 switch (fieldTypeName) {
-                    case "String" -> ps.setString(i, declaredFields[i].get(o).toString());
+                    case "String" -> {
+                        if (declaredFields[i].get(o) != null) {
+                            ps.setString(i, declaredFields[i].get(o).toString());
+                        } else {
+                            ps.setString(i, null);
+                        }
+                    }
                     case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
                     case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
                     case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
-                    case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                    default -> {
-                        Object objectField = declaredFields[i].get(o);
-                        //todo to be deleted
-                        log.atError().log("Academy field of Student object: {}", objectField);
-                        Object objectFiledIdValue = null;
-                        if (objectField != null) {
-                            Field[] declaredFields1 = declaredFields[i].getType().getDeclaredFields();
-                            declaredFields1[0].setAccessible(true);
-                            objectFiledIdValue = declaredFields1[0].get(objectField);
-                            //todo to be deleted
-                            log.atError().log("id value of Student's Academy object field: {}", objectFiledIdValue);
+                    case "LocalDate" -> {
+                        if (declaredFields[i].get(o) != null) {
+                            ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
+                        } else {
+                            ps.setDate(i, null);
                         }
-                        ps.setObject(i, objectFiledIdValue);
+                    }
+                    default -> {
+                        if (declaredFields[i].get(o) != null) {
+                            Field declaredIdField = declaredFields[i].getType().getDeclaredFields()[0];
+                            declaredIdField.setAccessible(true);
+                            Object objectFieldIdValue = declaredIdField.get(declaredFields[i].get(o));
+                            ps.setObject(i, objectFieldIdValue);
+                        } else {
+                            ps.setObject(i, null);
+                        }
                     }
                 }
             }
