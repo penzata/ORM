@@ -323,7 +323,7 @@ class ORManagerImplTest {
 
         Student refreshedStudent = manager.refresh(savedStudent);
 
-        assertThat(refreshedStudent).isNotEqualTo(savedStudent);
+        assertThat(refreshedStudent.hashCode()).isNotEqualTo(savedStudent.hashCode());
         assertThat(refreshedStudent).usingRecursiveComparison().isNotEqualTo(savedStudent);
 
         output(createdStudentsTable).toFile("tableFromTest.txt");
