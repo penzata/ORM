@@ -214,7 +214,6 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public boolean delete(Object o) {
-
         Field idField = o.getClass().getDeclaredFields()[0];
         idField.setAccessible(true);
         try (Connection connection = dataSource.getConnection()) {
@@ -223,11 +222,12 @@ public class ORManagerImpl implements ORManager {
             ps.executeUpdate();
             idField.set(o, null);
             return true;
-        } catch (Exception ex) {
-            log.error("Exception has occurred: ", ex);
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
         }
         return false;
-
     }
 
     @Override
