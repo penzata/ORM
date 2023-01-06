@@ -37,6 +37,7 @@ public class ORManagerImpl implements ORManager {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
+                //todo to be deleted
                 log.atDebug().log("table create statement: \n{}", sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
@@ -103,12 +104,14 @@ public class ORManagerImpl implements ORManager {
                     case "LocalDate" -> ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
                     default -> {
                         Object objectField = declaredFields[i].get(o);
+                        //todo to be deleted
                         log.atError().log("Academy field of Student object: {}", objectField);
                         Object objectFiledIdValue = null;
                         if (objectField != null) {
                             Field[] declaredFields1 = declaredFields[i].getType().getDeclaredFields();
                             declaredFields1[0].setAccessible(true);
                             objectFiledIdValue = declaredFields1[0].get(objectField);
+                            //todo to be deleted
                             log.atError().log("id value of Student's Academy object field: {}", objectFiledIdValue);
                         }
                         ps.setObject(i, objectFiledIdValue);
