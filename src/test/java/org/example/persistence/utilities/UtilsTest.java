@@ -29,8 +29,6 @@ class UtilsTest {
     private static final String SQL_ADD_ONE = "INSERT INTO tests (first_name) VALUES(?)";
     Connection conn;
     PreparedStatement stmt;
-    Source source;
-    Table table;
     ORManager ormManager;
 
     @BeforeEach
@@ -40,8 +38,6 @@ class UtilsTest {
         conn.setAutoCommit(false);
         log.atDebug().log("is the connection valid: {}", conn.isValid(1000));
         conn.prepareStatement(TESTS_TABLE).execute();
-        source = new Source("jdbc:h2:file:./src/database/testDB", "", "");
-        table = new Table(source, "tests");
     }
 
     @AfterEach
