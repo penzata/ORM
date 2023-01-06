@@ -217,7 +217,10 @@ public class ORManagerImpl implements ORManager {
         Field idField = o.getClass().getDeclaredFields()[0];
         idField.setAccessible(true);
         try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement ps = connection.prepareStatement(getTableForDelete(o.getClass()));
+            PreparedStatement ps = connection.prepareStatement(sqlDeleteStatement(o.getClass()));
+            if (idField.get(o) == null) {
+                return false;
+            }
             ps.setString(1, idField.get(o).toString());
             ps.executeUpdate();
             idField.set(o, null);
