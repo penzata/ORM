@@ -2,6 +2,7 @@ package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.db.type.DateValue;
 import org.assertj.db.type.Table;
 import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
@@ -17,6 +18,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,7 +73,7 @@ class ORManagerImplTest {
 
         assertThat(savedStudent.getId()).isNotNull();
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
     @Test
@@ -82,23 +84,45 @@ class ORManagerImplTest {
         assertThat(savedStudent.getId()).isPositive();
         assertThat(savedSecondStudent.getId()).isGreaterThan(savedStudent.getId());
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdStudentsTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
+    void WhenSavingToDBThenInsertCorrectValuesIntoTable() {
+        manager.save(new Student("Don", "DeLio", 86, LocalDate.of(1989, Month.APRIL, 24)));
+        manager.save(new Student("Kurt", "Vonnegut", 100, LocalDate.of(1995, Month.DECEMBER, 13)));
+
+        assertThat(createdStudentsTable).row(0)
+                .value().isEqualTo(1)
+                .value().isEqualTo("Don")
+                .value().isEqualTo("DeLio")
+                .value().isEqualTo(86)
+                .value().isEqualTo(DateValue.of(1989, 4, 24))
+                .row(1)
+                .value().isEqualTo(2)
+                .value().isEqualTo("Kurt")
+                .value().isEqualTo("Vonnegut")
+                .value().isEqualTo(100)
+                .value().isEqualTo(DateValue.of(1995, 12, 13));
+
+        output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
     @Test
     void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
         Student st = new Student("Shelly", "", 66, LocalDate.now());
+
         manager.save(st);
         manager.save(st);
         manager.save(st);
 
         assertThat(createdStudentsTable).hasNumberOfRows(1);
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
     @Test
-    void canFindPersonById() {
+    void canFindById() {
         Student savedStudent = manager.save(new Student("Harry", "", 66, LocalDate.now()));
 
         Optional<Student> foundStudent = manager.findById(savedStudent.getId(), Student.class);
@@ -107,66 +131,102 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenIdDoesntExistsThenReturnEmptyOptional() {
-        Optional<Student> personToBeFound = manager.findById(-1L, Student.class);
+    void WhenTryToFindByIdAndIdExistsReturnObject() throws SQLException {
+        String dbInsertedStudent = """
+                INSERT INTO students (first_name, second_name, age, graduate_academy, academy_id)
+                values ('Jimmy', 'Tulip', 51, null, null)
+                """;
+        connection.prepareStatement(dbInsertedStudent).executeUpdate();
 
-        assertThat(personToBeFound).isNotPresent();
+        Student foundStudent = manager.findById(1, Student.class).get();
+
+        assertThat(foundStudent.getId()).isEqualTo(1);
+    }
+
+    @Test
+    void WhenIdDoesntExistsThenReturnEmptyOptional() {
+        Optional<Student> studentToBeFound = manager.findById(-1L, Student.class);
+
+        assertThat(studentToBeFound).isNotPresent();
     }
 
     @Test
     void WhenFindAllThenReturnAllSavedToDBObjects() {
-        manager.save(new Student("Ivan", "", 66, LocalDate.now()));
-        manager.save(new Student("Petkan", "", 66, LocalDate.now()));
+        manager.save(new Student("Ivan", "", 21, LocalDate.now()));
+        manager.save(new Student("Petkan", "", 26, LocalDate.now()));
+        manager.save(new Student("Petkan", "", 26, LocalDate.now()));
+        manager.save(student1);
+        manager.save(student1);
 
         List<Student> allStudents = manager.findAll(Student.class);
 
-        assertThat(allStudents).hasSize(2);
-        assertThat(createdStudentsTable).row(1)
-                .value().isEqualTo(2)
-                .value().isEqualTo("Petkan");
-
-        output(createdStudentsTable).toFile("tableFromTest");
+        assertThat(allStudents).hasSize(4);
     }
 
     @Test
-    void WhenRegisterAnEntityReturnATableMatchingItsFields() {
+    void WhenInsertingIntoDBThenFindAllReturnsCorrectRecordsCount() throws SQLException {
+        String dbInsertedStudent = """
+                INSERT INTO students (first_name, second_name, age, graduate_academy, academy_id)
+                VALUES ('John', 'Doe', 51, null, null)
+                """;
+        connection.prepareStatement(dbInsertedStudent).executeUpdate();
+        String dbInsertedSecondStudent = """
+                INSERT INTO students (first_name, second_name, age, graduate_academy, academy_id)
+                VALUES ('Jane', 'Doe', 32, '2018-04-27', null)
+                """;
+        connection.prepareStatement(dbInsertedSecondStudent).executeUpdate();
+
+        int recordsCount = manager.findAll(Student.class).size();
+
+        assertThat(recordsCount).isEqualTo(2);
+
+        output(createdStudentsTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
+    void WhenRegisterAnEntityThenReturnATableWithColumnNamesMatchingItsFields() {
         @Entity
-        @org.example.persistence.annotations.Table(name = "trial_table")
-        class TrialTable {
+        class Dude {
             @Id
-            @Column(name = "trial_id")
-            int trialId;
-            @Column(name = "trial_first_name", nullable = false)
-            String trialFirstName;
+            int id;
+            @Column(name = "the_real_name", nullable = false)
+            String name;
             @Column(nullable = false)
-            boolean under18;
+            boolean over18;
+            Double height;
         }
-        Table table = new Table(dataSource, "trial_table");
+        Table table = new Table(dataSource, "dudes");
 
-        manager.register(TrialTable.class);
+        manager.register(Dude.class);
 
-        assertThat(table).hasNumberOfColumns(3);
-        assertThat(table).column(1)
-                .hasColumnName("trial_first_name");
+        assertThat(table).hasNumberOfColumns(4);
+        assertThat(table).column(0)
+                .hasColumnName("id")
+                .column(1)
+                .hasColumnName("the_real_name")
+                .column(2)
+                .hasColumnName("over18")
+                .column(3)
+                .hasColumnName("height");
 
-        output(table).toFile("tableFromTest");
+        output(table).toFile("tableFromTest.txt");
     }
 
     @Test
     void WhenSavingThreeEntitiesTwoDBThenReturnRecordsCountToBeEqualToThree() {
         long startCount = manager.recordsCount(Student.class);
-        Student un = manager.save(new Student("Un", "", 66, LocalDate.now()));
-        Student dos = manager.save(new Student("Dos", "", 66, LocalDate.now()));
-        Student tres = manager.save(new Student("Tres", "", 66, LocalDate.now()));
 
+        Student un = manager.save(new Student("Un", "", 1, LocalDate.now()));
+        Student dos = manager.save(new Student("Dos", "", 2, LocalDate.now()));
+        Student tres = manager.save(new Student("Tres", "", 3, LocalDate.now()));
         long endCount = manager.recordsCount(Student.class);
 
         assertThat(endCount).isEqualTo(startCount + 3);
     }
 
     @Test
-    void WhenDeletingFromRecordsThenReturnRecordsCountWithOneRecordLess() {
-        Student savedStudent = manager.save(new Student("Laura", "", 66, LocalDate.now()));
+    void WhenDeletingThenReturnRecordsCountWithOneRecordLess() {
+        Student savedStudent = manager.save(new Student("Laura", "", 68, LocalDate.now()));
         long startCount = manager.recordsCount(Student.class);
 
         manager.delete(savedStudent);
@@ -186,7 +246,7 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThatDoesntExistsThenReturnFalse() {
-        Student notSavedInDBStudent = new Student("Andi", "", 66, LocalDate.now());
+        Student notSavedInDBStudent = new Student("Andi", "", 42, LocalDate.now());
 
         boolean result = manager.delete(notSavedInDBStudent);
 
@@ -195,14 +255,14 @@ class ORManagerImplTest {
 
     @Test
     void WhenDeletingRecordThatDoesntExistsThenDontThrowException() {
-        Student notSavedInDBStudent = new Student("Andi", "", 66, LocalDate.now());
+        Student notSavedInDBStudent = new Student("Andi", "", 42, LocalDate.now());
 
         assertDoesNotThrow(() -> manager.delete(notSavedInDBStudent));
     }
 
     @Test
     void WhenDeletingRecordSetAutoGeneratedIdToNull() {
-        Student savedStudent = manager.save(new Student("Bobby", "", 66, LocalDate.now()));
+        Student savedStudent = manager.save(new Student("Bobby", "", 78, LocalDate.now()));
 
         manager.delete(savedStudent);
 
@@ -211,8 +271,8 @@ class ORManagerImplTest {
 
     @Test
     void canDeleteMultipleRecords() {
-        Student catherine = manager.save(new Student("Catherine", "", 66, LocalDate.now()));
-        Student audrey = manager.save(new Student("Audrey", "", 66, LocalDate.now()));
+        Student catherine = manager.save(new Student("Catherine", "", 42, LocalDate.now()));
+        Student audrey = manager.save(new Student("Audrey", "", 39, LocalDate.now()));
         long startCount = manager.recordsCount(Student.class);
 
         manager.delete(catherine, audrey);
@@ -222,67 +282,83 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenUpdatingRecordAndFindItByIdThenReturnTheUpdatedRecord() {
-        Student savedStudent = manager.save(new Student("Donna", "", 66, LocalDate.now()));
-        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
-
-        foundStudent.setFirstName("Don");
-        manager.update(foundStudent);
-        Student foundUpdatedStudent = manager.findById(foundStudent.getId(), Student.class).get();
-
-        assertThat(foundUpdatedStudent.getFirstName()).isEqualTo(foundStudent.getFirstName());
-        assertThat(foundUpdatedStudent).usingRecursiveComparison().isEqualTo(foundStudent);
-
-        assertThat(createdStudentsTable).column(0)
-                .value().isEqualTo(foundStudent.getId())
-                .column(1)
-                .value().isEqualTo("Don");
-
-        output(createdStudentsTable).toFile("tableFromTest");
-    }
-
-    @Test
     void canUpdateRecord() {
-        Student savedStudent = manager.save(new Student("Donna", "", 66, LocalDate.now()));
-        Student returnedStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        Student student = manager.save(new Student("Donna", "", 66, LocalDate.now()));
 
-        savedStudent.setFirstName("Dina");
-        manager.update(savedStudent);
-        Student foundStudent = manager.findById(savedStudent.getId(), Student.class).get();
+        student.setFirstName("Dina");
+        Student updatedStudent = manager.update(student);
 
-        assertThat(foundStudent.getFirstName()).isNotEqualTo(returnedStudent.getFirstName());
-        assertThat(foundStudent).usingRecursiveComparison().isNotEqualTo(returnedStudent);
-
+        assertThat(updatedStudent).isEqualTo(student);
+        assertThat(updatedStudent).usingRecursiveComparison().isEqualTo(student);
         assertThat(createdStudentsTable).column(0)
-                .value().isEqualTo(savedStudent.getId())
+                .value().isEqualTo(updatedStudent.getId())
                 .column(1)
                 .value().isEqualTo("Dina");
 
-        output(createdStudentsTable).toFile("tableFromTest");
+        output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
     @Test
-    void WhenUpdatingRecordInsideDBThenRefreshReturnsUpdatedRecord() throws SQLException {
-        Student student = new Student("John", "Doe", 51, null);
-        manager.save(student);
-        String updateStatement = """
-                UPDATE students 
-                SET second_name = 'Travolta'
-                        WHERE id = 1
-                """;
+    void WhenUpdatingObjectThatDoesntExistInDBThenMergeInDBAndReturnTheSameObject() {
+        Student notSavedInDBStudent = new Student("Donna", "", 19, LocalDate.now());
 
-        connection.prepareStatement(updateStatement).executeUpdate();
+        notSavedInDBStudent.setFirstName("Don");
+        Student updateStudent = manager.update(notSavedInDBStudent);
+
+        assertThat(updateStudent).isEqualTo(notSavedInDBStudent);
+        assertThat(updateStudent).usingRecursiveComparison().isEqualTo(notSavedInDBStudent);
+
+        output(createdStudentsTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
+    void WhenUpdatingRecordInsideDBThenRefreshReturnsUpdatedEntity() throws SQLException {
+        Student savedStudent = manager.save(new Student("John", "Doe", 51, null));
+        String dbUpdatedStudent = """
+                UPDATE students
+                SET second_name = 'Travolta', age = 67, graduate_academy = '2018-04-27'
+                WHERE id = 1
+                """;
+        connection.prepareStatement(dbUpdatedStudent).executeUpdate();
+
+        Student refreshedStudent = manager.refresh(savedStudent);
+
+        assertThat(refreshedStudent).isNotEqualTo(savedStudent);
+        assertThat(refreshedStudent).usingRecursiveComparison().isNotEqualTo(savedStudent);
+
+        output(createdStudentsTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
+    void WhenRecordIsNotUpdatedInsideDBThenRefreshReturnsSameEntity() throws SQLException {
+        Student student = new Student("John", "Doe", 51, null);
+        student.setId(1L);
+        String dbInsertedStudent = """
+                INSERT INTO students (first_name, second_name, age, graduate_academy, academy_id)
+                VALUES ('John', 'Doe', 51, null, null)
+                """;
+        connection.prepareStatement(dbInsertedStudent).executeUpdate();
+
         Student refreshedStudent = manager.refresh(student);
 
-        assertEquals("Bonanza", student.getSecondName());
+        assertThat(refreshedStudent).isEqualTo(student);
     }
 
     @Test
-    void WhenInsertingIntoDBThenFindAllReturnsInsertedRecords() {
-        String insertStatement = """
-                INSERT INTO students
-                VALUES (1, 'John', 'Doe', 51, null, null)
+    void WhenRefreshThenReturnNotNull() throws SQLException {
+        Student savedStudent = manager.save(student1);
+        String dbUpdatedStudent = """
+                UPDATE students
+                SET second_name = 'Dilon', age = 67, graduate_academy = '2022-11-23'
+                WHERE id = 1
                 """;
+        connection.prepareStatement(dbUpdatedStudent).executeUpdate();
+
+        Student refreshedStudent = manager.refresh(savedStudent);
+
+        assertThat(refreshedStudent).isNotNull();
+
+        output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
 }
