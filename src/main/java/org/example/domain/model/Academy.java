@@ -21,7 +21,7 @@ public class Academy implements Serializable {
 //    @OneToMany(mappedBy = "academy")
 //    List<Student> students;
 
-    public Academy() {
+    Academy() {
     }
 
     public Academy(String name) {
