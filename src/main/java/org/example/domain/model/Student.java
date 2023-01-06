@@ -3,12 +3,13 @@ package org.example.domain.model;
 import lombok.Data;
 import org.example.persistence.annotations.*;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @Data
 @Entity
 @Table(name = "students")
-public class Student {
+public class Student implements Serializable {
     @Id
     @Column(name = "id")
     private Long id;
