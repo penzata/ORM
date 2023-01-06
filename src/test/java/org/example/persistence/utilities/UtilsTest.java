@@ -1,8 +1,6 @@
 package org.example.persistence.utilities;
 
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.db.type.Source;
-import org.assertj.db.type.Table;
 import org.example.domain.model.Student;
 import org.example.persistence.ormanager.ORManager;
 import org.junit.jupiter.api.AfterEach;
