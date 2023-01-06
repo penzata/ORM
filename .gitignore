@@ -3,5 +3,5 @@
 /src/database/
 /src/main/resources/tests_coverage/
 /logs/
-/tableFromTest
 /tests_serialization.ser
+/tableFromTest.txt
