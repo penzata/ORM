@@ -6,6 +6,7 @@ import org.assertj.db.type.DateValue;
 import org.assertj.db.type.Table;
 import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
+import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
@@ -109,7 +110,7 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenSavingExistingObjectIntoDatabaseThenReturnTheSameAndDontSaveIt() {
+    void WhenSavingExistingIntoDatabaseObjectMultipleTimesThenTheRowsCountDoesntChange() {
         Student st = new Student("Shelly", "", 66, LocalDate.now());
 
         manager.save(st);
@@ -299,16 +300,10 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenUpdatingObjectThatDoesntExistInDBThenMergeInDBAndReturnTheSameObject() {
+    void WhenUpdatingObjectThatDoesntExistInDBThenThrowException() {
         Student notSavedInDBStudent = new Student("Donna", "", 19, LocalDate.now());
 
-        notSavedInDBStudent.setFirstName("Don");
-        Student updateStudent = manager.update(notSavedInDBStudent);
-
-        assertThat(updateStudent).isEqualTo(notSavedInDBStudent);
-        assertThat(updateStudent).usingRecursiveComparison().isEqualTo(notSavedInDBStudent);
-
-        output(createdStudentsTable).toFile("tableFromTest.txt");
+        assertThrows(EntityNotFoundException.class, () -> manager.update(notSavedInDBStudent));
     }
 
     @Test
@@ -323,8 +318,8 @@ class ORManagerImplTest {
 
         Student refreshedStudent = manager.refresh(savedStudent);
 
-        assertThat(refreshedStudent).isNotEqualTo(savedStudent);
-        assertThat(refreshedStudent).usingRecursiveComparison().isNotEqualTo(savedStudent);
+        assertThat(refreshedStudent).isEqualTo(savedStudent);
+        assertThat(refreshedStudent).usingRecursiveComparison().isEqualTo(savedStudent);
 
         output(createdStudentsTable).toFile("tableFromTest.txt");
     }
