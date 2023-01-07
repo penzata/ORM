@@ -37,6 +37,7 @@ public interface ORManager {
     void persist(Object o);
 
     /**
+     * To work correctly, the entity on which is used this method must have a no-args constructor.
      * @param id  Serializable, Long or Integer ID number.
      * @param cls Generic Class.
      * @return the current object, based on provided ID, if exists or empty optional,
