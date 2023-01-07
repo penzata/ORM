@@ -1,6 +1,7 @@
 package org.example.persistence.utilities;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.exceptionhandler.ExceptionHandler;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -9,36 +10,37 @@ import java.util.List;
 @Slf4j
 public class SerializationUtil {
     private static final List<Object> serializedData = new ArrayList<>();
-    private static final String SUFFIX = "sSerTestList.ser";
+    private static String fullFileName;
+    private static final String SUFFIX = "_serialization.ser";
 
     private SerializationUtil() {
     }
 
-    public static void serialize(Object obj) {
-        String fileName = obj.getClass().getSimpleName() + SUFFIX;
-        serializeIntoList(obj, fileName);
+    public static <T> void serialize(T obj, String simpleFileName) {
+        fullFileName = simpleFileName + SUFFIX;
+        serializeIntoList(obj, fullFileName);
     }
 
     // serialize the given object and save it to file
-    private static void serializeIntoList(Object obj, String fileName) {
+    private static <T> void serializeIntoList(T obj, String fullFileName) {
         serializedData.add(obj);
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileName))) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fullFileName))) {
             out.writeObject(serializedData);
         } catch (IOException e) {
-            log.error(e.getMessage());
+            ExceptionHandler.inputOutput(e);
         }
     }
 
-    public static List<Object> deserialize(Class<?> clss) {
-        String fileName = clss.getSimpleName() + SUFFIX;
-        return deserializeList(fileName);
+    public static <T> List<T> deserialize(String simpleFileName) {
+        return simpleFileName.equals(fullFileName) ?
+                deserializeList(simpleFileName) : deserializeList(simpleFileName + SUFFIX);
     }
 
     // deserialize to Objects from given file
-    private static List<Object> deserializeList(String fileName) {
-        List<Object> deserializedData = new ArrayList<>();
+    private static <T> List<T> deserializeList(String fileName) {
+        List<T> deserializedData = new ArrayList<>();
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(fileName))) {
-            deserializedData = (List<Object>) in.readObject();
+            deserializedData = (List<T>) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             log.error(e.getMessage());
         }

@@ -9,6 +9,7 @@ import java.time.LocalDate;
 
 public class Main {
     public static void main(String[] args) {
+        //todo to be deleted
         String path = "h2.properties";
         ORManager orManager = Utils.withPropertiesFrom(path);
 

@@ -2,13 +2,12 @@
 <configuration>
 
     <appender name="file" class="ch.qos.logback.core.FileAppender">
-        <param name="Append" value="false" />
-        <file>${user.dir}/logs/example.log</file>
+        <param name="Append" value="true"/>
+        <file>${user.dir}/logs/ormManager.log</file>
         <encoder>
             <pattern>%msg%n</pattern>
         </encoder>
     </appender>
-
 
     <root level="info">
         <appender-ref ref="file" />

@@ -3,7 +3,5 @@
 /src/database/
 /src/main/resources/tests_coverage/
 /logs/
-/tableFromTest
-/StudentsSerTestList.ser
-/DudesSerTestList.ser
-/AcademysSerTestList.ser
+/tests_serialization.ser
+/tableFromTest.txt
