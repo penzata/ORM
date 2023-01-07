@@ -213,7 +213,7 @@ public class ORManagerImpl implements ORManager {
     public <T> List<T> findAll(Class<T> cls) {
         List<T> records = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
+             PreparedStatement st = connection.prepareStatement(sqlSelectAllStatement(cls))) {
             log.atInfo().log("{}", st);
             ResultSet rs = st.executeQuery();
             while (rs.next()) {
@@ -259,7 +259,7 @@ public class ORManagerImpl implements ORManager {
     public long recordsCount(Class<?> clss) {
         long count = 0;
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(SQL_COUNT_ALL + getTableName(clss))) {
+             PreparedStatement ps = connection.prepareStatement(sqlCountStatement(clss))) {
             ResultSet rs = ps.executeQuery();
             log.atInfo().log("{}", ps);
             if (rs.next()) {
