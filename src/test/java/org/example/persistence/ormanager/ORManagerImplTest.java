@@ -215,9 +215,11 @@ class ORManagerImplTest {
         log.atDebug().log("{}", savedDude);
 
         Optional<Dude> foundDude = manager.findById(dude.getId(), Dude.class);
+        boolean isAdult = foundDude.get().isAdult();
 
         assertThat(foundDude).contains(dude);
         assertThat(foundDude.get().getHeight()).isEqualTo(178.3);
+        assertTrue(isAdult);
 
         output(createdDudesTable).toFile("tableFromTest.txt");
     }
@@ -369,14 +371,13 @@ class ORManagerImplTest {
     @Entity
     static class Dude {
         @Id
-        Integer id;
+        private Integer id;
         @Column(name = "the_real_name", nullable = false)
-        String name;
-        @Column(nullable = false)
-        boolean adult;
-        Double height;
+        private String name;
+        private boolean adult;
+        private Double height;
         @Column(name = "collection_of_cards")
-        long collection;
+        private long collection;
 
 
         public Dude(String name, boolean adult, Double height, long collection) {
@@ -386,7 +387,7 @@ class ORManagerImplTest {
             this.collection = collection;
         }
 
-        private Dude() {
+        Dude() {
         }
     }
 }
