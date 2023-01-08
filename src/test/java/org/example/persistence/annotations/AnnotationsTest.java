@@ -1,25 +1,38 @@
 package org.example.persistence.annotations;
 
-import org.example.persistence.utilities.AnnotationUtils;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 
+import static org.example.persistence.utilities.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
-
 
 class AnnotationsTest {
 
     @Test
     void WhenClassIsMarkedWithEntityAnnotationThenReturnTrue() {
-        boolean result = AnnotationUtils.entityAnnotationIsPresent(WithAnno.class);
+        boolean result = entityAnnotationIsPresent(WithAnno.class);
 
         assertTrue(result);
     }
 
     @Test
     void WhenClassIsNotMarkedWithEntityAnnotationThenReturnFalse() {
-        boolean result = AnnotationUtils.entityAnnotationIsPresent(WithoutAnno.class);
+        boolean result = entityAnnotationIsPresent(WithoutAnno.class);
+
+        assertFalse(result);
+    }
+
+    @Test
+    void WhenFieldIsMarkedWithIdAnnotationThenReturnTrue() {
+        boolean result = idAnnotationIsPresent(WithAnno.class);
+
+        assertTrue(result);
+    }
+
+    @Test
+    void WhenFieldIsNotMarkedWithIdAnnotationThenReturnFalse() {
+        boolean result = idAnnotationIsPresent(WithoutAnno.class);
 
         assertFalse(result);
     }
@@ -28,7 +41,7 @@ class AnnotationsTest {
     void WhenTableAnnotationIsAbsentThenReturnClassNameInPlural() {
         String expectedTableName = "withoutannos";
 
-        String tableName = AnnotationUtils.getTableName(WithoutAnno.class);
+        String tableName = getTableName(WithoutAnno.class);
 
         assertEquals(expectedTableName, tableName);
     }
@@ -37,7 +50,7 @@ class AnnotationsTest {
     void WhenTableAnnotationIsPresentAndNameIsNotDefaultThenReturnNameFromAnnotation() {
         String expectedTableName = "named_table";
 
-        String tableName = AnnotationUtils.getTableName(WithAnno.class);
+        String tableName = getTableName(WithAnno.class);
 
         assertEquals(expectedTableName, tableName);
     }
@@ -46,7 +59,7 @@ class AnnotationsTest {
     void WhenTableAnnotationIsPresentAndNameIsDefaultThenReturnClassNameInPlural() {
         String expectedTableName = "defaultannos";
 
-        String tableName = AnnotationUtils.getTableName(DefaultAnno.class);
+        String tableName = getTableName(DefaultAnno.class);
 
         assertEquals(expectedTableName, tableName);
     }
@@ -56,7 +69,7 @@ class AnnotationsTest {
         String expectedFieldName = "trialId";
 
         Field[] declaredFields = WithoutAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
+        String fieldName = getColumnName(declaredFields[0]);
 
         assertEquals(expectedFieldName, fieldName);
     }
@@ -66,7 +79,7 @@ class AnnotationsTest {
         String expectedFieldName = "id";
 
         Field[] declaredFields = WithAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
+        String fieldName = getColumnName(declaredFields[0]);
 
         assertEquals(expectedFieldName, fieldName);
     }
@@ -76,7 +89,7 @@ class AnnotationsTest {
         String expectedTableName = "trialId";
 
         Field[] declaredFields = DefaultAnno.class.getDeclaredFields();
-        String fieldName = AnnotationUtils.getColumnName(declaredFields[0]);
+        String fieldName = getColumnName(declaredFields[0]);
 
         assertEquals(expectedTableName, fieldName);
     }
@@ -86,9 +99,9 @@ class AnnotationsTest {
         boolean expectedUniqueValue = false;
 
         Field trialId = DefaultAnno.class.getDeclaredField("trialId");
-        boolean uniqueDefault = AnnotationUtils.isUnique(trialId);
+        boolean uniqueDefault = isUnique(trialId);
         Field trialId1 = WithAnno.class.getDeclaredField("trialId");
-        boolean uniqueSet = AnnotationUtils.canBeNull(trialId1);
+        boolean uniqueSet = canBeNull(trialId1);
 
         assertEquals(expectedUniqueValue, uniqueDefault);
         assertNotEquals(expectedUniqueValue, uniqueSet);
@@ -99,26 +112,12 @@ class AnnotationsTest {
         boolean expectedNullableValue = true;
 
         Field trialFirstName = DefaultAnno.class.getDeclaredField("trialFirstName");
-        boolean nullableDefault = AnnotationUtils.canBeNull(trialFirstName);
+        boolean nullableDefault = canBeNull(trialFirstName);
         Field trialFirstName1 = WithAnno.class.getDeclaredField("trialFirstName");
-        boolean nullableSet = AnnotationUtils.canBeNull(trialFirstName1);
+        boolean nullableSet = canBeNull(trialFirstName1);
 
         assertEquals(expectedNullableValue, nullableDefault);
         assertNotEquals(expectedNullableValue, nullableSet);
-    }
-
-    @Test
-    void WhenIdIsAbsentThenReturnEmptyString() {
-        String idField = AnnotationUtils.getIdFieldName(WithoutAnno.class);
-
-        assertEquals("", idField);
-    }
-
-    @Test
-    void WhenIdIsPresentThenReturnIt() {
-        String idField = AnnotationUtils.getIdFieldName(WithAnno.class);
-
-        assertNotNull(idField);
     }
 
     @Entity
@@ -134,6 +133,7 @@ class AnnotationsTest {
     @Entity
     @Table
     static class DefaultAnno {
+        @Id
         @Column
         Long trialId;
         @Column

@@ -48,7 +48,7 @@ class SerializationUtilTest {
 
         log.atDebug().log("student's hashcode: {}\n" +
                         "student2's hashcode: {}\n" +
-                        "deserializedStudents's hashcode: {}, {}",
+                        "deserializedStudents' hashcode: {}, {}",
                 student.hashCode(), student2.hashCode(),
                 deserializedStudents.get(0).hashCode(), deserializedStudents.get(1).hashCode());
 

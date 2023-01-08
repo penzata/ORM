@@ -1,5 +1,6 @@
 package org.example.persistence.utilities;
 
+import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.example.persistence.annotations.*;
 import org.example.persistence.sql.SQLDialect;
@@ -39,6 +40,8 @@ public class AnnotationUtils {
      */
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
+        if (idAnnotationIsPresent(clss)) {
         for (Field declaredField : clss.getDeclaredFields()) {
             String fieldTypeName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
@@ -61,8 +64,20 @@ public class AnnotationUtils {
                 case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
                 case "manyToOne" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
             }
+            }
+        } else {
+            throw new IdAnnotationNotFoundException(clss);
         }
         return columnNames;
+    }
+
+    public static boolean idAnnotationIsPresent(Class<?> clss) {
+        boolean present = false;
+        Field firstEntityField = clss.getDeclaredFields()[0];
+        if (firstEntityField.isAnnotationPresent(Id.class)) {
+            present = true;
+        }
+        return present;
     }
 
     public static String getColumnName(Field field) {
@@ -76,8 +91,17 @@ public class AnnotationUtils {
         return fieldName.equals("") ? field.getName() : fieldName;
     }
 
-    public static String getColumnNameFromManyToOne(Field field) {
-        return field.getAnnotation(ManyToOne.class).name();
+    private static String autoincrementPrimaryKeyTag(Field declaredField) {
+        String columnDefinition = "";
+        if (declaredField.isAnnotationPresent(Column.class)) {
+            columnDefinition = declaredField.getAnnotation(Column.class).columnDefinition();
+        }
+
+        String autoincrementTag = columnDefinition.equals("serial") ?
+                SQLDialect.AUTO_INCREMENT_POSTGRE + SQLDialect.PRIMARY_KEY :
+                SQLDialect.AUTO_INCREMENT_H2 + SQLDialect.PRIMARY_KEY;
+
+        return declaredField.isAnnotationPresent(Id.class) ? autoincrementTag : "";
     }
 
     public static String getColumnNameFromManyToOne(Class<?> cls) {
@@ -101,17 +125,8 @@ public class AnnotationUtils {
         return field.getAnnotation(ManyToOne.class).nullable();
     }
 
-    private static String autoincrementPrimaryKeyTag(Field declaredField) {
-        String columnDefinition = "";
-        if (declaredField.isAnnotationPresent(Column.class)) {
-            columnDefinition = declaredField.getAnnotation(Column.class).columnDefinition();
-        }
-
-        String autoincrementTag = columnDefinition.equals("serial") ?
-                SQLDialect.AUTO_INCREMENT_POSTGRE + SQLDialect.PRIMARY_KEY :
-                SQLDialect.AUTO_INCREMENT_H2 + SQLDialect.PRIMARY_KEY;
-
-        return declaredField.isAnnotationPresent(Id.class) ? autoincrementTag : "";
+    public static String getColumnNameFromManyToOne(Field field) {
+        return field.getAnnotation(ManyToOne.class).name();
     }
 
     public static String getIdFieldName(Class<?> clss) {
@@ -131,8 +146,6 @@ public class AnnotationUtils {
 
         return stringListClass;
     }
-
-
 
     public static String getReferencedTableName(Class<?> cls){
         String tableName = null;

@@ -22,7 +22,7 @@ import static org.assertj.db.output.Outputs.output;
 @Slf4j
 class ORManagerTest {
     private static final String DATABASE_PATH = "h2.properties";
-    ORManager ormManager;
+    ORManager manager;
     HikariDataSource dataSource;
     Connection connection;
     PreparedStatement ps;
@@ -50,21 +50,18 @@ class ORManagerTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        ormManager = Utils.withPropertiesFrom(DATABASE_PATH);
+        manager = Utils.withPropertiesFrom(DATABASE_PATH);
         connection = Utils.getConnection();
         log.atDebug().log("Is the connection valid: {}", connection.isValid(1000));
-        assert connection != null;
-        connection.setAutoCommit(false);
-
-        ormManager.register(Academy.class, Student.class);
-
+        manager.register(Academy.class, Student.class);
         source = new Source("jdbc:h2:file:./src/database/testDB", "", "");
-
         createdStudentsTable = new Table(source, "students");
         createdAcademiesTable = new Table(source, "academies");
+
+        Student st5 = new Student("Kurt", "Russell", 44, LocalDate.now());
     }
 
-    //todo rework the test
+    //todo rework the test & check for the thrown error
     @Test
     void stuff() {
         Student st1 = new Student("Don", "Johnson", 63, LocalDate.now());
@@ -72,18 +69,19 @@ class ORManagerTest {
         Student st3 = new Student("Kurt", "Russell", 44, LocalDate.now());
 
         Academy ac1 = new Academy("SoftServe");
-        ormManager.save(ac1);
         Academy ac2 = new Academy("Khan");
-        ormManager.save(ac2);
+
+        manager.save(ac1);
+        manager.save(ac2);
 
         st1.setAcademy(ac1);
         log.atError().log("{}", st1);
         st2.setAcademy(ac1);
         st3.setAcademy(ac2);
 
-        ormManager.save(st1);
-        ormManager.save(st2);
-        ormManager.save(st3);
+        manager.save(st1);
+        manager.save(st2);
+        manager.save(st3);
 
         output(createdStudentsTable).toConsole();
         output(createdAcademiesTable).toConsole();

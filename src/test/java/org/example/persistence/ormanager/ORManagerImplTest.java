@@ -1,12 +1,15 @@
 package org.example.persistence.ormanager;
 
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.db.type.DateValue;
 import org.assertj.db.type.Table;
 import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
+import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
+import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
@@ -152,6 +155,24 @@ class ORManagerImplTest {
     }
 
     @Test
+    void WhenFindByIdGenericEntityThenReturnsTheCorrectEntityFromDB() {
+        Table createdDudesTable = new Table(dataSource, "dudes");
+        manager.register(Dude.class);
+        Dude dude = new Dude("The Dude", true, 178.3, 1656189648);
+        Dude savedDude = manager.save(dude);
+        log.atDebug().log("{}", savedDude);
+
+        Optional<Dude> foundDude = manager.findById(dude.getId(), Dude.class);
+        boolean isAdult = foundDude.get().isAdult();
+
+        assertThat(foundDude).contains(dude);
+        assertThat(foundDude.get().getHeight()).isEqualTo(178.3);
+        assertTrue(isAdult);
+
+        output(createdDudesTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
     void WhenFindAllThenReturnAllSavedToDBObjects() {
         manager.save(new Student("Ivan", "", 21, LocalDate.now()));
         manager.save(new Student("Petkan", "", 26, LocalDate.now()));
@@ -186,35 +207,48 @@ class ORManagerImplTest {
 
     @Test
     void WhenRegisterAnEntityThenReturnATableWithColumnNamesMatchingItsFields() {
-        @Entity
-        class Dude {
-            @Id
-            int id;
-            @Column(name = "the_real_name", nullable = false)
-            String name;
-            @Column(nullable = false)
-            boolean over18;
-            Double height;
-        }
-        Table table = new Table(dataSource, "dudes");
+        Table createdDudesTable = new Table(dataSource, "dudes");
 
         manager.register(Dude.class);
 
-        assertThat(table).hasNumberOfColumns(4);
-        assertThat(table).column(0)
+        assertThat(createdDudesTable).hasNumberOfColumns(5);
+        assertThat(createdDudesTable).column(0)
                 .hasColumnName("id")
                 .column(1)
                 .hasColumnName("the_real_name")
                 .column(2)
-                .hasColumnName("over18")
+                .hasColumnName("adult")
                 .column(3)
-                .hasColumnName("height");
+                .hasColumnName("height")
+                .column(4)
+                .hasColumnName("collection_of_cards");
 
-        output(table).toFile("tableFromTest.txt");
+        output(createdDudesTable).toFile("tableFromTest.txt");
     }
 
     @Test
-    void WhenSavingThreeEntitiesTwoDBThenReturnRecordsCountToBeEqualToThree() {
+    void WhenRegisterAndEntityAnnotationIsNotPresentThenThrowException() {
+        class NoEntity {
+            Integer id;
+            String species;
+        }
+
+        assertThrows(EntityAnnotationNotFoundException.class, () -> manager.register(NoEntity.class));
+    }
+
+    @Test
+    void WhenRegisterAndIdAnnotationIsNotPresentThenThrowException() {
+        @Entity
+        class NoId {
+            Integer id;
+            String species;
+        }
+
+        assertThrows(IdAnnotationNotFoundException.class, () -> manager.register(NoId.class));
+    }
+
+    @Test
+    void WhenSavingThreeEntitiesToDBThenReturnRecordsCountToBeEqualToThree() {
         long startCount = manager.recordsCount(Student.class);
 
         Student un = manager.save(new Student("Un", "", 1, LocalDate.now()));
@@ -367,4 +401,27 @@ class ORManagerImplTest {
         output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
+    @Data
+    @Entity
+    static class Dude {
+        @Id
+        private Integer id;
+        @Column(name = "the_real_name", nullable = false)
+        private String name;
+        private boolean adult;
+        private Double height;
+        @Column(name = "collection_of_cards")
+        private long collection;
+
+
+        public Dude(String name, boolean adult, Double height, long collection) {
+            this.name = name;
+            this.adult = adult;
+            this.height = height;
+            this.collection = collection;
+        }
+
+        Dude() {
+        }
+    }
 }

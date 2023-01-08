@@ -11,13 +11,6 @@ import java.util.List;
 
 public class SQLDialect {
     public static final String SQL_CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
-    public static final String SQL_FIND_ALL = """
-            SELECT * FROM
-            """;
-    public static final String SQL_COUNT_ALL = """
-            SELECT COUNT(*) FROM\040
-            """;
-
     public static final String PRIMARY_KEY = " PRIMARY KEY";
     public static final String STRING = " VARCHAR(255)";
     public static final String LOCAL_DATE = " DATE";
@@ -31,8 +24,8 @@ public class SQLDialect {
     private SQLDialect() {
     }
 
-    public static String sqlDeleteStatement(Class<?> cls) {
-        String tableName = AnnotationUtils.getTableName(cls);
+    public static String sqlDeleteStatement(Class<?> clss) {
+        String tableName = AnnotationUtils.getTableName(clss);
         return String.format("DELETE FROM %s WHERE id = ?", tableName);
     }
 
@@ -61,8 +54,8 @@ public class SQLDialect {
         return String.format("SELECT * FROM %s WHERE id=?", tableName);
     }
 
-    public static String sqlUpdateStatement(Class<?> cls) {
-        Field[] declaredFields = cls.getDeclaredFields();
+    public static String sqlUpdateStatement(Class<?> clss) {
+        Field[] declaredFields = clss.getDeclaredFields();
         List<String> columnNamesAndPlaceholders = new ArrayList<>();
         String placeholder = " = ?";
         for (Field declaredField : declaredFields) {
@@ -70,9 +63,19 @@ public class SQLDialect {
                 columnNamesAndPlaceholders.add(AnnotationUtils.getColumnName(declaredField) + placeholder);
             }
         }
-        String tableName = AnnotationUtils.getTableName(cls);
+        String tableName = AnnotationUtils.getTableName(clss);
 
         return String.format("UPDATE %s SET %s WHERE id = ?",
                 tableName, String.join(", ", columnNamesAndPlaceholders));
+    }
+
+    public static String sqlSelectAllStatement(Class<?> clss) {
+        String tableName = AnnotationUtils.getTableName(clss);
+        return String.format("SELECT * FROM %s", tableName);
+    }
+
+    public static String sqlCountStatement(Class<?> clss) {
+        String tableName = AnnotationUtils.getTableName(clss);
+        return String.format("SELECT COUNT(*) FROM %s", tableName);
     }
 }

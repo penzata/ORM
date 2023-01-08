@@ -23,7 +23,8 @@ public class ExceptionHandler {
     }
 
     public static void newInstance(ReflectiveOperationException ex) {
-        log.atError().log("There's some problem initializing a new instance of the constructor's declaring class:", ex);
+        log.atError().log("There's some problem initializing a new instance from the constructor's declaring class." +
+                "Possibly the no-args constructor of the entity class is missing:", ex);
     }
 
     public static void inputOutput(IOException ex) {
