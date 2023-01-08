@@ -60,7 +60,7 @@ public class ORManagerImpl implements ORManager {
                 Class<?> listType = getListType(declaredField);
                 String fkColumnName = getColumnNameFromManyToOne(listType);
                 String fk = "ALTER TABLE " + getColumnName(declaredField) + " ADD FOREIGN KEY ("+ fkColumnName +") REFERENCES "+ getTableName(cls) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
-                System.out.println("key: " + fk);
+//                System.out.println("key: " + fk);
                 return fk;
             }
         }
@@ -78,6 +78,7 @@ public class ORManagerImpl implements ORManager {
             } else {
                 ps.setInt(1, (Integer) id);
             }
+            System.out.println(ps);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 entity = extractEntityFromResultSet(rs, cls);
@@ -182,6 +183,7 @@ public class ORManagerImpl implements ORManager {
                             ps.setDate(i, null);
                         }
                     }
+                    case "List" -> {}
                     default -> {
                         if (declaredFields[i].get(o) != null) {
                             Field declaredIdField = declaredFields[i].getType().getDeclaredFields()[0];
