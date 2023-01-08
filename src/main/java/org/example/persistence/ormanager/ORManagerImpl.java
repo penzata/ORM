@@ -56,22 +56,6 @@ public class ORManagerImpl implements ORManager {
         }
     }
 
-    public String createForeignKeyIfAvailable(Class<?> cls) {
-        String fk = null;
-        try {
-            Statement stmt = dataSource.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
-            while (rs.next()) {
-                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
-                    fk = createForeignKey(cls);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return fk;
-    }
-
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
@@ -382,6 +366,7 @@ public class ORManagerImpl implements ORManager {
                     }
                 }
             }
+
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
@@ -405,5 +390,21 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.newInstance(e);
         }
         return newObject;
+    }
+
+    public String createForeignKeyIfAvailable(Class<?> cls) {
+        String fk = null;
+        try {
+            Statement stmt = dataSource.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+            while (rs.next()) {
+                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
+                    fk = createForeignKey(cls);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return fk;
     }
 }

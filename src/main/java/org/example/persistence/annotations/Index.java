@@ -8,8 +8,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @interface Index {
     String name() default "";
-
-    String columnList();
-
-    boolean unique() default false;
 }
