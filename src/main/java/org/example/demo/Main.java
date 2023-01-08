@@ -13,14 +13,17 @@ public class Main {
         String path = "h2.properties";
         ORManager orManager = Utils.withPropertiesFrom(path);
 
-        orManager.register(Academy.class, Student.class);
+        orManager.register(Student.class, Academy.class);
         Academy academy = new Academy("SoftServe");
         orManager.save(academy);
         Student student = new Student("Neo", "The One", 999, LocalDate.parse("1999-03-24"));
+        orManager.save(academy);
+
         student.setAcademy(academy);
         orManager.save(student);
-//        orManager.findById(2, Student.class);
-//        orManager.findAll(Student.class);
+
+        orManager.findById(1, Student.class);
+        orManager.findAll(Student.class);
         student.setAge(44);
         orManager.update(student);
     }

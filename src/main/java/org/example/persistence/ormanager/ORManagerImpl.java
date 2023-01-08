@@ -5,6 +5,9 @@ import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
+import org.example.persistence.annotations.ManyToOne;
+import org.example.persistence.annotations.OneToMany;
+import org.example.persistence.utilities.Utils;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -18,8 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
-import static org.example.persistence.utilities.AnnotationUtils.getTableName;
+import static org.example.persistence.utilities.AnnotationUtils.*;
 
 
 @Slf4j
@@ -37,18 +39,40 @@ public class ORManagerImpl implements ORManager {
             String tableName = getTableName(cls);
             if (cls.isAnnotationPresent(Entity.class)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
-                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);\n", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
-                //todo to be deleted
-                log.atDebug().log("table create statement: \n{}", sqlCreateTable);
-                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
+                String fk = createForeignKeyIfAvailable(cls);
+
+
+                String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
+                log.atInfo().log(registerTransaction);
+
+                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(registerTransaction)) {
                     prepStmt.executeUpdate();
+
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
             }
         }
     }
+
+    public String createForeignKeyIfAvailable(Class<?> cls) {
+        String fk = null;
+        try {
+            Statement stmt = dataSource.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+            while (rs.next()) {
+                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
+                    fk = createForeignKey(cls);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return fk;
+    }
+
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
@@ -163,6 +187,8 @@ public class ORManagerImpl implements ORManager {
                         } else {
                             ps.setDate(i, null);
                         }
+                    }
+                    case "List" -> {
                     }
                     default -> {
                         if (declaredFields[i].get(o) != null) {
@@ -329,8 +355,10 @@ public class ORManagerImpl implements ORManager {
                             declaredFields[i].set(entityToFind, rs.getDate(columnIndex));
                         }
                     }
+                    case "List" -> {
+                    }
                     default -> {
-                        long columnValue = rs.getLong(columnIndex);
+                        Long columnValue = rs.getLong(columnIndex);
                         if (columnValue != 0) {
                             Object byId = findById(columnValue, declaredFields[i].getType()).get();
                             declaredFields[i].set(entityToFind, byId);
