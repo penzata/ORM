@@ -5,9 +5,6 @@ import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Id;
-import org.example.persistence.annotations.ManyToOne;
-import org.example.persistence.annotations.OneToMany;
-import org.example.persistence.utilities.Utils;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -145,10 +142,6 @@ public class ORManagerImpl implements ORManager {
         }
     }
 
-    @Override
-    public <T> T refresh(T o) {
-        return null;
-    }
 
     @Override
     public <T> List<T> findAll(Class<T> cls) {
@@ -165,6 +158,62 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.sql(e);
         }
         return records;
+    }
+
+    @Override
+    public long recordsCount(Class<?> clss) {
+        long count = 0;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sqlCountStatement(clss))) {
+            ResultSet rs = ps.executeQuery();
+            log.atInfo().log("{}", ps);
+            if (rs.next()) {
+                count = rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        }
+        return count;
+    }
+
+    @Override
+    public <T> T refresh(T o) {
+        Field[] declaredFeilds = o.getClass().getDeclaredFields();
+        for (int i = 0; i < declaredFeilds.length; i++) {
+            declaredFeilds[i].setAccessible(true);
+        }
+        try (Connection conn = dataSource.getConnection()) {
+            PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS);
+            st.setString(1, declaredFeilds[0].get(o).toString());
+            ResultSet rs = st.executeQuery();
+            ResultSetMetaData rsMt = rs.getMetaData();
+            while (rs.next()) {
+                for (int i = 2; i < rsMt.getColumnCount(); i++) {
+                    /*System.out.println(rs.getString(rsMt.getColumnName(i)));*/
+                    /*declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));*/
+                    switch (rsMt.getColumnTypeName(i)) {
+                        case "CHARACTER VARYING":
+                            declaredFeilds[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
+                            break;
+                        case "INTEGER":
+                            declaredFeilds[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                            break;
+                        case "DATE":
+                            Date sqlDate = rs.getDate(rsMt.getColumnName(i));
+                            if (sqlDate != null) {
+                                LocalDate sqlLocalDate = sqlDate.toLocalDate();
+                                declaredFeilds[i - 1].set(o, sqlLocalDate);
+                            }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return o;
     }
 
     @Override
@@ -202,22 +251,6 @@ public class ORManagerImpl implements ORManager {
         Field fieldWithIdAnnotation = firstFoundField.get();
         fieldWithIdAnnotation.setAccessible(true);
         return fieldWithIdAnnotation;
-    }
-
-    @Override
-    public long recordsCount(Class<?> clss) {
-        long count = 0;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sqlCountStatement(clss))) {
-            ResultSet rs = ps.executeQuery();
-            log.atInfo().log("{}", ps);
-            if (rs.next()) {
-                count = rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        }
-        return count;
     }
 
     private <T> boolean objectIdIsNotNull(T o) {
@@ -307,105 +340,6 @@ public class ORManagerImpl implements ORManager {
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
-    }
-
-    @Override
-    public <T> T refresh(T o) {
-        Field[] declaredFeilds = o.getClass().getDeclaredFields();
-        for (int i = 0; i < declaredFeilds.length; i++) {
-            declaredFeilds[i].setAccessible(true);
-        }
-        try(Connection conn = dataSource.getConnection()){
-            PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS);
-            st.setString(1, declaredFeilds[0].get(o).toString());
-            ResultSet rs = st.executeQuery();
-            ResultSetMetaData rsMt = rs.getMetaData();
-            while(rs.next()){
-                for (int i = 2; i < rsMt.getColumnCount(); i++) {
-                    /*System.out.println(rs.getString(rsMt.getColumnName(i)));*/
-                    /*declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));*/
-                    switch(rsMt.getColumnTypeName(i)){
-                        case "CHARACTER VARYING":
-                            declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));
-                            break;
-                        case "INTEGER":
-                            declaredFeilds[i-1].set(o, rs.getInt(rsMt.getColumnName(i)));
-                            break;
-                        case "DATE":
-                            Date sqlDate = rs.getDate(rsMt.getColumnName(i));
-                            if(sqlDate!=null){
-                                LocalDate sqlLocalDate = sqlDate.toLocalDate();
-                                declaredFeilds[i-1].set(o,sqlLocalDate);
-                            }
-                    }
-                }
-            }
-
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-        return o;
-    }
-
-    @Override
-    public <T> List<T> findAll(Class<T> cls) {
-        List<T> records = new ArrayList<>();
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
-            ResultSet rs = st.executeQuery();
-            while (rs.next()) {
-                records.add(extractEntityFromResultSet(rs, cls));
-            }
-            rs.close();
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        }
-        return records;
-    }
-
-    @Override
-    public void delete(Object... objects) {
-        for (Object object : objects) {
-            delete(object);
-        }
-    }
-
-    @Override
-    public boolean delete(Object o) {
-        Field idField = o.getClass().getDeclaredFields()[0];
-        idField.setAccessible(true);
-        try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement ps = connection.prepareStatement(sqlDeleteStatement(o.getClass()));
-            if (idField.get(o) == null) {
-                return false;
-            }
-            ps.setString(1, idField.get(o).toString());
-            ps.executeUpdate();
-            idField.set(o, null);
-            return true;
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-        return false;
-    }
-
-    @Override
-    public long recordsCount(Class<?> clss) {
-        long count = 0;
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(SQL_COUNT_ALL + getTableName(clss))) {
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                count = rs.getLong(1);
-            }
-        } catch (SQLException e) {
-            ExceptionHandler.sql(e);
-        }
-        return count;
     }
 
     /**
