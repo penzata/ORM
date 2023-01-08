@@ -37,16 +37,14 @@ public class ORManagerImpl implements ORManager {
             String tableName = getTableName(cls);
             if (entityAnnotationIsPresent(cls)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
-                String sqlCreateTable = String.format("%s %s%n(%n%s%n);\n", SQL_CREATE_TABLE, tableName,
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
                 String fk = createForeignKeyIfAvailable(cls);
 
                 String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
                 log.atInfo().log(registerTransaction);
-
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(registerTransaction)) {
                     prepStmt.executeUpdate();
-
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
@@ -58,16 +56,16 @@ public class ORManagerImpl implements ORManager {
 
     public String createForeignKeyIfAvailable(Class<?> cls) {
         String fk = null;
-        try {
-            Statement stmt = dataSource.getConnection().createStatement();
+        try (Statement stmt = dataSource.getConnection().createStatement()) {
             ResultSet rs = stmt.executeQuery("SHOW TABLES;");
             while (rs.next()) {
                 if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
                     fk = createForeignKey(cls);
                 }
             }
+            rs.close();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            ExceptionHandler.sql(e);
         }
         return fk;
     }
@@ -176,36 +174,31 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T refresh(T o) {
-        Field[] declaredFeilds = o.getClass().getDeclaredFields();
-        for (int i = 0; i < declaredFeilds.length; i++) {
-            declaredFeilds[i].setAccessible(true);
+        Field[] declaredFields = o.getClass().getDeclaredFields();
+        for (int i = 0; i < declaredFields.length; i++) {
+            declaredFields[i].setAccessible(true);
         }
-        try (Connection conn = dataSource.getConnection()) {
-            PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS);
-            st.setString(1, declaredFeilds[0].get(o).toString());
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
+            st.setString(1, declaredFields[0].get(o).toString());
+            log.atInfo().log("{}", st);
             ResultSet rs = st.executeQuery();
             ResultSetMetaData rsMt = rs.getMetaData();
             while (rs.next()) {
                 for (int i = 2; i < rsMt.getColumnCount(); i++) {
-                    /*System.out.println(rs.getString(rsMt.getColumnName(i)));*/
-                    /*declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));*/
                     switch (rsMt.getColumnTypeName(i)) {
-                        case "CHARACTER VARYING":
-                            declaredFeilds[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
-                            break;
-                        case "INTEGER":
-                            declaredFeilds[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
-                            break;
-                        case "DATE":
+                        case "CHARACTER VARYING" -> declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
+                        case "INTEGER" -> declaredFields[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                        case "DATE" -> {
                             Date sqlDate = rs.getDate(rsMt.getColumnName(i));
                             if (sqlDate != null) {
                                 LocalDate sqlLocalDate = sqlDate.toLocalDate();
-                                declaredFeilds[i - 1].set(o, sqlLocalDate);
+                                declaredFields[i - 1].set(o, sqlLocalDate);
                             }
+                        }
                     }
                 }
             }
-
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
         } catch (IllegalAccessException e) {
@@ -254,11 +247,8 @@ public class ORManagerImpl implements ORManager {
     private <T> boolean objectIdIsNotNull(T o) {
         boolean exists = false;
         try {
-            Field declaredField = o.getClass().getDeclaredFields()[0];
-            if (declaredField.isAnnotationPresent(Id.class)) {
-                declaredField.setAccessible(true);
-                exists = declaredField.get(o) != null;
-            }
+            Field fieldWithIdAnnotation = getFieldWithIdAnnotation(o.getClass());
+            exists = fieldWithIdAnnotation.get(o) != null;
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
@@ -380,7 +370,6 @@ public class ORManagerImpl implements ORManager {
                     }
                 }
             }
-
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
