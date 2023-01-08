@@ -16,7 +16,6 @@ public class Academy implements Serializable {
     Long id;
     @Column(name = "name", nullable = false)
     private String name;
-
     @OneToMany(mappedBy = "academies")
     ArrayList<Student> students = new ArrayList<>();
 
