@@ -5,20 +5,21 @@ import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
+import org.example.persistence.annotations.OneToMany;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
-import static org.example.persistence.utilities.AnnotationUtils.getTableName;
+import static org.example.persistence.utilities.AnnotationUtils.*;
 
 
 @Slf4j
@@ -38,16 +39,34 @@ public class ORManagerImpl implements ORManager {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
+                String fk = createForeignKeyStatementIfAvailable(cls);
                 //todo to be deleted
                 log.atDebug().log("table create statement: \n{}", sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
+                    Statement statement = dataSource.getConnection().createStatement();
+                    statement.execute(fk);
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
             }
         }
     }
+
+    private String createForeignKeyStatementIfAvailable(Class<?> cls) {
+
+        for (Field declaredField : cls.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(OneToMany.class)) {
+                Class<?> listType = getListType(declaredField);
+                String fkColumnName = getColumnNameFromManyToOne(listType);
+                String fk = "ALTER TABLE " + getColumnName(declaredField) + " ADD FOREIGN KEY ("+ fkColumnName +") REFERENCES "+ getTableName(cls) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
+                System.out.println("key: " + fk);
+                return fk;
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {

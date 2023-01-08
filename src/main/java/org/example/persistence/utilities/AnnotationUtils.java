@@ -4,6 +4,7 @@ import org.example.persistence.annotations.*;
 import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,52 +36,56 @@ public class AnnotationUtils {
         List<String> columnNames = new ArrayList<>();
         List<String> keys = new ArrayList<>();
         for (Field declaredField : clss.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(OneToMany.class)) {
+                continue;
+            }
             String fieldTypeName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
             String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
             String constraints = (isUnique(declaredField) ? " UNIQUE " : "") +
-                            (canBeNull(declaredField) ? "" : " NOT NULL");
-          
+                    (canBeNull(declaredField) ? "" : " NOT NULL");
+
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 fieldTypeName = "foreign key";
                 columnName = declaredField.getAnnotation(ManyToOne.class).name();
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
-                String referenceTableName = declaredField.getType().getAnnotation(Table.class).name();
-                String namedFk = declaredField.getType().getSimpleName().toLowerCase();
-                String fkStatement = String.format("CONSTRAINT fk_%s FOREIGN KEY(%s) REFERENCES %s(id)",
-                        namedFk, columnName, referenceTableName);
-                String refActions = "\nON DELETE SET NULL\nON UPDATE CASCADE";
-                keys.add(fkStatement + refActions);
             }
 
             switch (fieldTypeName) {
                 case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
-                case "Long", "long" ->
-                        columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
+                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
                 case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
-                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN   + constraints);
+                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
                 case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
                 case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
             }
-            columnNames.addAll(keys);
         }
         return columnNames;
     }
 
     public static String getColumnName(Field field) {
         String fieldName = "";
-        if(field.isAnnotationPresent(ManyToOne.class)) {
+        if (field.isAnnotationPresent(ManyToOne.class)) {
             fieldName = getColumnNameFromManyToOne(field);
         }
         if (field.isAnnotationPresent(Column.class)) {
             fieldName = field.getAnnotation(Column.class).name();
         }
-            return fieldName.equals("") ? field.getName() : fieldName;
-        }
+        return fieldName.equals("") ? field.getName() : fieldName;
+    }
 
     public static String getColumnNameFromManyToOne(Field field) {
         return field.getAnnotation(ManyToOne.class).name();
+    }
+
+    public static String getColumnNameFromManyToOne(Class<?> cls) {
+        for (Field declaredField : cls.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
+                return declaredField.getAnnotation(ManyToOne.class).name();
+            }
+        }
+        return null;
     }
 
     public static boolean isUnique(Field field) {
@@ -118,4 +123,12 @@ public class AnnotationUtils {
         }
         return result;
     }
+
+    public static <T> Class<?> getListType (Field field){
+        ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
+        Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
+
+        return stringListClass;
+    }
+
 }
