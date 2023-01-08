@@ -12,7 +12,6 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +43,8 @@ public class ORManagerImpl implements ORManager {
                 log.atDebug().log("table create statement: \n{}", sqlCreateTable);
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
                     prepStmt.executeUpdate();
-                    Statement statement = dataSource.getConnection().createStatement();
-                    statement.execute(fk);
+//                    Statement statement = dataSource.getConnection().createStatement();
+//                    statement.execute(fk);
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
@@ -73,6 +72,7 @@ public class ORManagerImpl implements ORManager {
         T entity = null;
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sqlSelectStatement(cls))) {
+            System.out.println(id.getClass().getSimpleName());
             if (id.getClass().getSimpleName().equalsIgnoreCase("long")) {
                 ps.setLong(1, (Long) id);
             } else {
