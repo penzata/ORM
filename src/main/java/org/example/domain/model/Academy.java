@@ -1,12 +1,10 @@
 package org.example.domain.model;
 
 import lombok.Data;
-import org.example.persistence.annotations.Column;
-import org.example.persistence.annotations.Entity;
-import org.example.persistence.annotations.Id;
-import org.example.persistence.annotations.Table;
+import org.example.persistence.annotations.*;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @Entity
@@ -18,8 +16,8 @@ public class Academy implements Serializable {
     @Column(name = "name", nullable = false)
     private String name;
 
-//    @OneToMany(mappedBy = "academy")
-//    List<Student> students;
+    @OneToMany(mappedBy = "academies")
+    List<Student> students;
 
     Academy() {
     }

@@ -5,6 +5,9 @@ import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Id;
+import org.example.persistence.annotations.ManyToOne;
+import org.example.persistence.annotations.OneToMany;
+import org.example.persistence.utilities.Utils;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -12,6 +15,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,11 +40,16 @@ public class ORManagerImpl implements ORManager {
             String tableName = getTableName(cls);
             if (entityAnnotationIsPresent(cls)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
-                String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
+                String sqlCreateTable = String.format("%s %s%n(%n%s%n);\n", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
-                log.atInfo().log("{}", sqlCreateTable);
-                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
+                String fk = createForeignKeyIfAvailable(cls);
+
+                String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
+                log.atInfo().log(registerTransaction);
+
+                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(registerTransaction)) {
                     prepStmt.executeUpdate();
+
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
@@ -49,6 +58,23 @@ public class ORManagerImpl implements ORManager {
             }
         }
     }
+
+    public String createForeignKeyIfAvailable(Class<?> cls) {
+        String fk = null;
+        try {
+            Statement stmt = dataSource.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+            while (rs.next()) {
+                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
+                    fk = createForeignKey(cls);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return fk;
+    }
+
 
     @Override
     public <T> Optional<T> findById(Serializable id, Class<T> cls) {
@@ -244,6 +270,8 @@ public class ORManagerImpl implements ORManager {
                             ps.setDate(i, null);
                         }
                     }
+                    case "List" -> {
+                    }
                     default -> {
                         if (declaredFields[i].get(o) != null) {
                             Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
@@ -281,6 +309,105 @@ public class ORManagerImpl implements ORManager {
         }
     }
 
+    @Override
+    public <T> T refresh(T o) {
+        Field[] declaredFeilds = o.getClass().getDeclaredFields();
+        for (int i = 0; i < declaredFeilds.length; i++) {
+            declaredFeilds[i].setAccessible(true);
+        }
+        try(Connection conn = dataSource.getConnection()){
+            PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS);
+            st.setString(1, declaredFeilds[0].get(o).toString());
+            ResultSet rs = st.executeQuery();
+            ResultSetMetaData rsMt = rs.getMetaData();
+            while(rs.next()){
+                for (int i = 2; i < rsMt.getColumnCount(); i++) {
+                    /*System.out.println(rs.getString(rsMt.getColumnName(i)));*/
+                    /*declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));*/
+                    switch(rsMt.getColumnTypeName(i)){
+                        case "CHARACTER VARYING":
+                            declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));
+                            break;
+                        case "INTEGER":
+                            declaredFeilds[i-1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                            break;
+                        case "DATE":
+                            Date sqlDate = rs.getDate(rsMt.getColumnName(i));
+                            if(sqlDate!=null){
+                                LocalDate sqlLocalDate = sqlDate.toLocalDate();
+                                declaredFeilds[i-1].set(o,sqlLocalDate);
+                            }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return o;
+    }
+
+    @Override
+    public <T> List<T> findAll(Class<T> cls) {
+        List<T> records = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement st = connection.prepareStatement(SQL_FIND_ALL + getTableName(cls))) {
+            ResultSet rs = st.executeQuery();
+            while (rs.next()) {
+                records.add(extractEntityFromResultSet(rs, cls));
+            }
+            rs.close();
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        }
+        return records;
+    }
+
+    @Override
+    public void delete(Object... objects) {
+        for (Object object : objects) {
+            delete(object);
+        }
+    }
+
+    @Override
+    public boolean delete(Object o) {
+        Field idField = o.getClass().getDeclaredFields()[0];
+        idField.setAccessible(true);
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement ps = connection.prepareStatement(sqlDeleteStatement(o.getClass()));
+            if (idField.get(o) == null) {
+                return false;
+            }
+            ps.setString(1, idField.get(o).toString());
+            ps.executeUpdate();
+            idField.set(o, null);
+            return true;
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return false;
+    }
+
+    @Override
+    public long recordsCount(Class<?> clss) {
+        long count = 0;
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(SQL_COUNT_ALL + getTableName(clss))) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                count = rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        }
+        return count;
+    }
+
     /**
      * @param rs   ResultSet from SELECT sql statement.
      * @param clss Class.
@@ -308,8 +435,10 @@ public class ORManagerImpl implements ORManager {
                             declaredFields[i].set(entityToFind, rs.getDate(columnIndex));
                         }
                     }
+                    case "List" -> {
+                    }
                     default -> {
-                        long columnValue = rs.getLong(columnIndex);
+                        Long columnValue = rs.getLong(columnIndex);
                         if (columnValue != 0) {
                             Object byId = findById(columnValue, declaredFields[i].getType()).get();
                             declaredFields[i].set(entityToFind, byId);
