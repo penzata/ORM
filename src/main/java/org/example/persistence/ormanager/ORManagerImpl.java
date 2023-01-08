@@ -1,9 +1,9 @@
 package org.example.persistence.ormanager;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
-import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
 
 import javax.sql.DataSource;
@@ -13,12 +13,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
-import static org.example.persistence.utilities.AnnotationUtils.declareColumnNamesFromEntityFields;
-import static org.example.persistence.utilities.AnnotationUtils.getTableName;
+import static org.example.persistence.utilities.AnnotationUtils.*;
 
 
 @Slf4j
@@ -34,7 +34,7 @@ public class ORManagerImpl implements ORManager {
         for (Class<?> cls : entityClasses) {
             List<String> columnNames;
             String tableName = getTableName(cls);
-            if (cls.isAnnotationPresent(Entity.class)) {
+            if (entityAnnotationIsPresent(cls)) {
                 columnNames = declareColumnNamesFromEntityFields(cls);
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
@@ -44,6 +44,8 @@ public class ORManagerImpl implements ORManager {
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }
+            } else {
+                throw new EntityAnnotationNotFoundException(cls);
             }
         }
     }
@@ -72,25 +74,11 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T save(T o) {
-        if (checkIfObjectIdIsNotNull(o)) {
+        if (objectIdIsNotNull(o)) {
             return update(o);
         }
         persist(o);
         return o;
-    }
-
-    private <T> boolean checkIfObjectIdIsNotNull(T o) {
-        boolean exists = false;
-        try {
-            Field declaredField = o.getClass().getDeclaredFields()[0];
-            if (declaredField.isAnnotationPresent(Id.class)) {
-                declaredField.setAccessible(true);
-                exists = declaredField.get(o) != null;
-            }
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-        return exists;
     }
 
     @Override
@@ -98,13 +86,12 @@ public class ORManagerImpl implements ORManager {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sqlUpdateStatement(o.getClass()))) {
             replacePlaceholdersInStatement(o, ps);
-            Field[] fields = o.getClass().getDeclaredFields();
-            int placeholderForId = fields.length;
-            fields[0].setAccessible(true);
-            if (fields[0].get(o) == null) {
+            int placeholderPositionForId = o.getClass().getDeclaredFields().length;
+            Field fieldWithIdAnnotation = getFieldWithIdAnnotation(o.getClass());
+            if (fieldWithIdAnnotation.get(o) == null) {
                 throw new EntityNotFoundException(o);
             }
-            ps.setString(placeholderForId, fields[0].get(o).toString());
+            ps.setString(placeholderPositionForId, fieldWithIdAnnotation.get(o).toString());
             ps.executeUpdate();
             log.atInfo().log("{}", ps);
         } catch (SQLException ex) {
@@ -129,78 +116,6 @@ public class ORManagerImpl implements ORManager {
             rs.close();
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
-        }
-    }
-
-    /**
-     * Replaces all placeholders ("?") in INSERT and UPDATE(except for the last one: WHERE id = ?) sql statements
-     * with the names of the columns in the table extracted form the saved/updated object.
-     *
-     * @param o  The generic entity object which will be saved or updated in the DB.
-     * @param ps Prepared statement for Insert and Update.
-     * @throws SQLException
-     */
-    private <T> void replacePlaceholdersInStatement(T o, PreparedStatement ps) throws SQLException {
-        try {
-            Field[] declaredFields = o.getClass().getDeclaredFields();
-            for (int i = 1; i < declaredFields.length; i++) {
-                declaredFields[i].setAccessible(true);
-                String fieldTypeName = declaredFields[i].getType().getSimpleName();
-                switch (fieldTypeName) {
-                    case "String" -> {
-                        if (declaredFields[i].get(o) != null) {
-                            ps.setString(i, declaredFields[i].get(o).toString());
-                        } else {
-                            ps.setString(i, null);
-                        }
-                    }
-                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
-                    case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
-                    case "Double", "double" -> ps.setDouble(i, (Double) declaredFields[i].get(o));
-                    case "LocalDate" -> {
-                        if (declaredFields[i].get(o) != null) {
-                            ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
-                        } else {
-                            ps.setDate(i, null);
-                        }
-                    }
-                    default -> {
-                        if (declaredFields[i].get(o) != null) {
-                            Field declaredIdField = declaredFields[i].getType().getDeclaredFields()[0];
-                            declaredIdField.setAccessible(true);
-                            Object objectFieldIdValue = declaredIdField.get(declaredFields[i].get(o));
-                            ps.setObject(i, objectFieldIdValue);
-                        } else {
-                            ps.setObject(i, null);
-                        }
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
-        }
-    }
-
-    /**
-     * Sets the ID field value of generic entity object to the autogenerated one from the DB side.
-     *
-     * @param o            The generic entity object for which the ID value will be set.
-     * @param generatedKey ResultSet from INSERT sql statement containing the autogenerated keys from DB side.
-     * @throws SQLException
-     */
-    private <T> void setAutoGeneratedId(T o, ResultSet generatedKey) throws SQLException {
-        Field[] declaredFields = o.getClass().getDeclaredFields();
-        try {
-            declaredFields[0].setAccessible(true);
-            String fieldTypeSimpleName = declaredFields[0].getType().getSimpleName();
-            if (fieldTypeSimpleName.equals("Long")) {
-                declaredFields[0].set(o, generatedKey.getLong(1));
-            } else {
-                declaredFields[0].set(o, generatedKey.getInt(1));
-            }
-        } catch (IllegalAccessException e) {
-            ExceptionHandler.illegalAccess(e);
         }
     }
 
@@ -235,17 +150,16 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public boolean delete(Object o) {
-        Field idField = o.getClass().getDeclaredFields()[0];
-        idField.setAccessible(true);
-        try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement ps = connection.prepareStatement(sqlDeleteStatement(o.getClass()));
-            if (idField.get(o) == null) {
+        Field fieldWithIdAnnotation = getFieldWithIdAnnotation(o.getClass());
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sqlDeleteStatement(o.getClass()))) {
+            if (fieldWithIdAnnotation.get(o) == null) {
                 return false;
             }
-            ps.setString(1, idField.get(o).toString());
+            ps.setString(1, fieldWithIdAnnotation.get(o).toString());
             ps.executeUpdate();
             log.atInfo().log("{}", ps);
-            idField.set(o, null);
+            fieldWithIdAnnotation.set(o, null);
             return true;
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
@@ -253,6 +167,15 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.illegalAccess(e);
         }
         return false;
+    }
+
+    private static <T> Field getFieldWithIdAnnotation(Class<T> clss) {
+        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(Id.class))
+                .findFirst();
+        Field fieldWithIdAnnotation = firstFoundField.get();
+        fieldWithIdAnnotation.setAccessible(true);
+        return fieldWithIdAnnotation;
     }
 
     @Override
@@ -269,6 +192,93 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.sql(e);
         }
         return count;
+    }
+
+    private <T> boolean objectIdIsNotNull(T o) {
+        boolean exists = false;
+        try {
+            Field declaredField = o.getClass().getDeclaredFields()[0];
+            if (declaredField.isAnnotationPresent(Id.class)) {
+                declaredField.setAccessible(true);
+                exists = declaredField.get(o) != null;
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return exists;
+    }
+
+    /**
+     * Replaces all placeholders ("?") in INSERT and UPDATE(except for the last one: WHERE id = ?) sql statements
+     * with the names of the columns in the table extracted form the saved/updated object.
+     *
+     * @param o  The generic entity object which will be saved or updated in the DB.
+     * @param ps Prepared statement for Insert and Update.
+     * @throws SQLException
+     */
+    private <T> void replacePlaceholdersInStatement(T o, PreparedStatement ps) throws SQLException {
+        try {
+            Field[] declaredFields = o.getClass().getDeclaredFields();
+            for (int i = 0; i < declaredFields.length; i++) {
+                if (declaredFields[i].equals(getFieldWithIdAnnotation(o.getClass()))) {
+                    continue;
+                }
+                declaredFields[i].setAccessible(true);
+                String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                switch (fieldTypeName) {
+                    case "String" -> {
+                        if (declaredFields[i].get(o) != null) {
+                            ps.setString(i, declaredFields[i].get(o).toString());
+                        } else {
+                            ps.setString(i, null);
+                        }
+                    }
+                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
+                    case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
+                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
+                    case "Double", "double" -> ps.setDouble(i, (Double) declaredFields[i].get(o));
+                    case "LocalDate" -> {
+                        if (declaredFields[i].get(o) != null) {
+                            ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
+                        } else {
+                            ps.setDate(i, null);
+                        }
+                    }
+                    default -> {
+                        if (declaredFields[i].get(o) != null) {
+                            Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
+                            Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
+                            ps.setObject(i, objectFieldIdValue);
+                        } else {
+                            ps.setObject(i, null);
+                        }
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+    }
+
+    /**
+     * Sets the ID field value of generic entity object to the autogenerated one from the DB side.
+     *
+     * @param o            The generic entity object for which the ID value will be set.
+     * @param generatedKey ResultSet from INSERT sql statement containing the autogenerated keys from DB side.
+     * @throws SQLException
+     */
+    private <T> void setAutoGeneratedId(T o, ResultSet generatedKey) throws SQLException {
+        Field fieldWithIdAnnotation = getFieldWithIdAnnotation(o.getClass());
+        String fieldTypeSimpleName = fieldWithIdAnnotation.getType().getSimpleName();
+        try {
+            if (fieldTypeSimpleName.equals("Long")) {
+                fieldWithIdAnnotation.set(o, generatedKey.getLong(1));
+            } else {
+                fieldWithIdAnnotation.set(o, generatedKey.getInt(1));
+            }
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
     }
 
     /**
