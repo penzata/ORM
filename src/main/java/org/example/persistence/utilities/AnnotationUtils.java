@@ -8,6 +8,7 @@ import org.example.persistence.sql.SQLDialect;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -32,20 +33,18 @@ public class AnnotationUtils {
             for (Field declaredField : clss.getDeclaredFields()) {
                 String fieldTypeName = declaredField.getType().getSimpleName();
                 String columnName = getColumnName(declaredField);
-                String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
+                String autoIdAndPKTags = autoIncAndPKTags(declaredField);
                 String constraints = (isUnique(declaredField) ? " UNIQUE " : "") +
                         (canBeNull(declaredField) ? "" : " NOT NULL");
-
                 if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                     fieldTypeName = "manyToOne";
                     columnName = declaredField.getAnnotation(ManyToOne.class).name();
                     constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
                 }
-
                 switch (fieldTypeName) {
                     case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
-                    case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
-                    case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
+                    case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + autoIdAndPKTags + constraints);
+                    case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + autoIdAndPKTags + constraints);
                     case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
                     case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
                     case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
@@ -59,12 +58,8 @@ public class AnnotationUtils {
     }
 
     public static boolean idAnnotationIsPresent(Class<?> clss) {
-        boolean present = false;
-        Field firstEntityField = clss.getDeclaredFields()[0];
-        if (firstEntityField.isAnnotationPresent(Id.class)) {
-            present = true;
-        }
-        return present;
+        return Arrays.stream(clss.getDeclaredFields())
+                .anyMatch(f -> f.isAnnotationPresent(Id.class));
     }
 
     public static String getColumnName(Field field) {
@@ -78,12 +73,15 @@ public class AnnotationUtils {
         return fieldName.equals("") ? field.getName() : fieldName;
     }
 
-    private static String autoincrementPrimaryKeyTag(Field declaredField) {
+    /**
+     * @param declaredField needed to check its annotations.
+     * @return String containing SQL statement for autoincrement ID and primary key.
+     */
+    private static String autoIncAndPKTags(Field declaredField) {
         String columnDefinition = "";
         if (declaredField.isAnnotationPresent(Column.class)) {
             columnDefinition = declaredField.getAnnotation(Column.class).columnDefinition();
         }
-
         String autoincrementTag = columnDefinition.equals("serial") ?
                 SQLDialect.AUTO_INCREMENT_POSTGRE + SQLDialect.PRIMARY_KEY :
                 SQLDialect.AUTO_INCREMENT_H2 + SQLDialect.PRIMARY_KEY;
