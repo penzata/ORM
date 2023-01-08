@@ -1,15 +1,12 @@
 package org.example.persistence.utilities;
 
-import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import org.example.persistence.annotations.*;
 import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,16 +20,6 @@ public class AnnotationUtils {
         return clss.isAnnotationPresent(Entity.class);
     }
 
-    public static String getTableName(Class<?> clss) {
-        String tableName = clss.getSimpleName().toLowerCase() + "s";
-        if (clss.isAnnotationPresent(Table.class)) {
-            String annotatedTableName = clss.getAnnotation(Table.class).name();
-            return annotatedTableName.equals("") ? tableName : annotatedTableName;
-        } else {
-            return tableName;
-        }
-    }
-
     /**
      * @param clss Class.
      * @return Collection of strings which contains the names of the columns (taken from the entity's fields)
@@ -42,28 +29,28 @@ public class AnnotationUtils {
         List<String> columnNames = new ArrayList<>();
         List<String> keys = new ArrayList<>();
         if (idAnnotationIsPresent(clss)) {
-        for (Field declaredField : clss.getDeclaredFields()) {
-            String fieldTypeName = declaredField.getType().getSimpleName();
-            String columnName = getColumnName(declaredField);
-            String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
-            String constraints = (isUnique(declaredField) ? " UNIQUE " : "") +
-                    (canBeNull(declaredField) ? "" : " NOT NULL");
+            for (Field declaredField : clss.getDeclaredFields()) {
+                String fieldTypeName = declaredField.getType().getSimpleName();
+                String columnName = getColumnName(declaredField);
+                String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
+                String constraints = (isUnique(declaredField) ? " UNIQUE " : "") +
+                        (canBeNull(declaredField) ? "" : " NOT NULL");
 
-            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
-                fieldTypeName = "manyToOne";
-                columnName = declaredField.getAnnotation(ManyToOne.class).name();
-                constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
-            }
+                if (declaredField.isAnnotationPresent(ManyToOne.class)) {
+                    fieldTypeName = "manyToOne";
+                    columnName = declaredField.getAnnotation(ManyToOne.class).name();
+                    constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
+                }
 
-            switch (fieldTypeName) {
-                case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
-                case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
-                case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
-                case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
-                case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
-                case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
-                case "manyToOne" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
-            }
+                switch (fieldTypeName) {
+                    case "String" -> columnNames.add(columnName + SQLDialect.STRING + constraints);
+                    case "Long", "long" -> columnNames.add(columnName + SQLDialect.LONG + idAndPKTag + constraints);
+                    case "int", "Integer" -> columnNames.add(columnName + SQLDialect.INTEGER + idAndPKTag + constraints);
+                    case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
+                    case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
+                    case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
+                    case "manyToOne" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
+                }
             }
         } else {
             throw new IdAnnotationNotFoundException(clss);
@@ -104,15 +91,6 @@ public class AnnotationUtils {
         return declaredField.isAnnotationPresent(Id.class) ? autoincrementTag : "";
     }
 
-    public static String getColumnNameFromManyToOne(Class<?> cls) {
-        for (Field declaredField : cls.getDeclaredFields()) {
-            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
-                return declaredField.getAnnotation(ManyToOne.class).name();
-            }
-        }
-        return null;
-    }
-
     public static boolean isUnique(Field field) {
         return field.isAnnotationPresent(Column.class) && field.getAnnotation(Column.class).unique();
     }
@@ -129,25 +107,7 @@ public class AnnotationUtils {
         return field.getAnnotation(ManyToOne.class).name();
     }
 
-    public static String getIdFieldName(Class<?> clss) {
-        String result = "";
-        for (Field field : clss.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Id.class)) {
-                result = field.getName();
-                break;
-            }
-        }
-        return result;
-    }
-
-    public static <T> Class<?> getListType (Field field){
-        ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
-        Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
-
-        return stringListClass;
-    }
-
-    public static String getReferencedTableName(Class<?> cls){
+    public static String getReferencedTableName(Class<?> cls) {
         String tableName = null;
         for (Field declaredField : cls.getDeclaredFields()) {
             tableName = getColumnName(declaredField);
@@ -169,6 +129,32 @@ public class AnnotationUtils {
             }
         }
         return null;
+    }
+
+    public static <T> Class<?> getListType(Field field) {
+        ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
+        Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
+
+        return stringListClass;
+    }
+
+    public static String getColumnNameFromManyToOne(Class<?> cls) {
+        for (Field declaredField : cls.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(ManyToOne.class)) {
+                return declaredField.getAnnotation(ManyToOne.class).name();
+            }
+        }
+        return null;
+    }
+
+    public static String getTableName(Class<?> clss) {
+        String tableName = clss.getSimpleName().toLowerCase() + "s";
+        if (clss.isAnnotationPresent(Table.class)) {
+            String annotatedTableName = clss.getAnnotation(Table.class).name();
+            return annotatedTableName.equals("") ? tableName : annotatedTableName;
+        } else {
+            return tableName;
+        }
     }
 
 }
