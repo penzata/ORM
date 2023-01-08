@@ -12,6 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -204,7 +205,42 @@ public class ORManagerImpl implements ORManager {
 
     @Override
     public <T> T refresh(T o) {
-        return null;
+        Field[] declaredFeilds = o.getClass().getDeclaredFields();
+        for (int i = 0; i < declaredFeilds.length; i++) {
+            declaredFeilds[i].setAccessible(true);
+        }
+        try(Connection conn = dataSource.getConnection()){
+            PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS);
+            st.setString(1, declaredFeilds[0].get(o).toString());
+            ResultSet rs = st.executeQuery();
+            ResultSetMetaData rsMt = rs.getMetaData();
+            while(rs.next()){
+                for (int i = 2; i < rsMt.getColumnCount(); i++) {
+                    /*System.out.println(rs.getString(rsMt.getColumnName(i)));*/
+                    /*declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));*/
+                    switch(rsMt.getColumnTypeName(i)){
+                        case "CHARACTER VARYING":
+                            declaredFeilds[i-1].set(o, rs.getString(rsMt.getColumnName(i)));
+                            break;
+                        case "INTEGER":
+                            declaredFeilds[i-1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                            break;
+                        case "DATE":
+                            Date sqlDate = rs.getDate(rsMt.getColumnName(i));
+                            if(sqlDate!=null){
+                                LocalDate sqlLocalDate = sqlDate.toLocalDate();
+                                declaredFeilds[i-1].set(o,sqlLocalDate);
+                            }
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            ExceptionHandler.sql(e);
+        } catch (IllegalAccessException e) {
+            ExceptionHandler.illegalAccess(e);
+        }
+        return o;
     }
 
     @Override
