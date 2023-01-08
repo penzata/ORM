@@ -1,5 +1,6 @@
 package org.example.persistence.utilities;
 
+import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import org.example.persistence.annotations.*;
 import org.example.persistence.sql.SQLDialect;
 
@@ -65,6 +66,8 @@ public class AnnotationUtils {
                 }
                 columnNames.addAll(keys);
             }
+        } else {
+            throw new IdAnnotationNotFoundException(clss);
         }
         return columnNames;
     }
