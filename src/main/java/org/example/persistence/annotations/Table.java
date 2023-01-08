@@ -14,7 +14,6 @@ public @interface Table {
 
     String schema() default "";
 
-    UniqueConstraint[] uniqueConstraints() default {};
 
     Index[] indexes() default {};
 

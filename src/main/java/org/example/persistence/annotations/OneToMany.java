@@ -8,8 +8,6 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OneToMany {
-    Class targetEntity() default void.class;
     String mappedBy() default "";
 
-    boolean orphanRemoval() default false;
 }

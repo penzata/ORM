@@ -14,17 +14,7 @@ public @interface Column {
 
     boolean nullable() default true;
 
-    boolean insertable() default true;
-
-    boolean updatable() default true;
-
     String columnDefinition() default "";
 
     String table() default "";
-
-    int length() default 255;
-
-    int precision() default 0;
-
-    int scale() default 0;
 }

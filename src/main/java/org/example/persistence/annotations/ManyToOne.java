@@ -14,6 +14,4 @@ public @interface ManyToOne {
 
     boolean nullable() default true;
 
-    boolean optional() default true;
-
 }

@@ -5,9 +5,6 @@ import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
-import org.example.persistence.annotations.ManyToOne;
-import org.example.persistence.annotations.OneToMany;
-import org.example.persistence.utilities.Utils;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
@@ -43,7 +40,6 @@ public class ORManagerImpl implements ORManager {
                         String.join(",\n", columnNames));
                 String fk = createForeignKeyIfAvailable(cls);
 
-
                 String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
                 log.atInfo().log(registerTransaction);
 
@@ -55,22 +51,6 @@ public class ORManagerImpl implements ORManager {
                 }
             }
         }
-    }
-
-    public String createForeignKeyIfAvailable(Class<?> cls) {
-        String fk = null;
-        try {
-            Statement stmt = dataSource.getConnection().createStatement();
-            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
-            while (rs.next()) {
-                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
-                    fk = createForeignKey(cls);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return fk;
     }
 
 
@@ -368,6 +348,7 @@ public class ORManagerImpl implements ORManager {
                     }
                 }
             }
+
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);
         }
@@ -391,5 +372,21 @@ public class ORManagerImpl implements ORManager {
             ExceptionHandler.newInstance(e);
         }
         return newObject;
+    }
+
+    public String createForeignKeyIfAvailable(Class<?> cls) {
+        String fk = null;
+        try {
+            Statement stmt = dataSource.getConnection().createStatement();
+            ResultSet rs = stmt.executeQuery("SHOW TABLES;");
+            while (rs.next()) {
+                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
+                    fk = createForeignKey(cls);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return fk;
     }
 }
