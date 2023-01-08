@@ -14,7 +14,6 @@ public @interface Table {
 
     String schema() default "";
 
-
     Index[] indexes() default {};
 
 }

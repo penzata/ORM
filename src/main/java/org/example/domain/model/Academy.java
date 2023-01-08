@@ -4,6 +4,7 @@ import lombok.Data;
 import org.example.persistence.annotations.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -16,12 +17,20 @@ public class Academy implements Serializable {
     @Column(name = "name", nullable = false)
     private String name;
     @OneToMany(mappedBy = "academies")
-    List<Student> students;
+    ArrayList<Student> students = new ArrayList<>();
 
     Academy() {
     }
 
     public Academy(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Academy{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
