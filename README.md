@@ -5,7 +5,7 @@ As of now, can work with these databases: H2.
 
 #### The ORM Manager can work with generic entities under these constraints:
 * every entity class must have an @Entity annotation;
-* the ID field of the class should always be placed as the first field and must have an @Id annotation.
+* every entity class must have a field (Long or Integer) with @Id annotation.
 
 #### Methods that the ORM Manager provides:
 * _register_ - providing an entity class or multiple ones, creates table(s) in DB based on the entity's properties;
