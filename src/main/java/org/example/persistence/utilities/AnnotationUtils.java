@@ -5,8 +5,12 @@ import org.example.persistence.sql.SQLDialect;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class AnnotationUtils {
 
@@ -34,11 +38,7 @@ public class AnnotationUtils {
      */
     public static List<String> declareColumnNamesFromEntityFields(Class<?> clss) {
         List<String> columnNames = new ArrayList<>();
-        List<String> keys = new ArrayList<>();
         for (Field declaredField : clss.getDeclaredFields()) {
-            if (declaredField.isAnnotationPresent(OneToMany.class)) {
-                continue;
-            }
             String fieldTypeName = declaredField.getType().getSimpleName();
             String columnName = getColumnName(declaredField);
             String idAndPKTag = autoincrementPrimaryKeyTag(declaredField);
@@ -46,7 +46,7 @@ public class AnnotationUtils {
                     (canBeNull(declaredField) ? "" : " NOT NULL");
 
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
-                fieldTypeName = "foreign key";
+                fieldTypeName = "manyToOne";
                 columnName = declaredField.getAnnotation(ManyToOne.class).name();
                 constraints = (canBeNullForManyToOne(declaredField) ? "" : " NOT NULL");
             }
@@ -58,7 +58,7 @@ public class AnnotationUtils {
                 case "LocalDate" -> columnNames.add(columnName + SQLDialect.LOCAL_DATE + constraints);
                 case "Boolean", "boolean" -> columnNames.add(columnName + SQLDialect.BOOLEAN + constraints);
                 case "Double", "double" -> columnNames.add(columnName + SQLDialect.DOUBLE + constraints);
-                case "foreign key" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
+                case "manyToOne" -> columnNames.add(columnName + SQLDialect.LONG + constraints);
             }
         }
         return columnNames;
@@ -129,6 +129,34 @@ public class AnnotationUtils {
         Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
 
         return stringListClass;
+    }
+
+
+
+    public static String getReferencedTableName(Class<?> cls){
+        String tableName = null;
+        for (Field declaredField : cls.getDeclaredFields()) {
+            tableName = getColumnName(declaredField);
+        }
+        return tableName;
+    }
+
+    public static String createForeignKey(Class<?> cls) {
+        for (Field declaredField : cls.getDeclaredFields()) {
+            if (declaredField.isAnnotationPresent(OneToMany.class)) {
+                Class<?> listType = getListType(declaredField);
+                String fkColumnName = getColumnNameFromManyToOne(listType);
+                String fk = "ALTER TABLE " + getColumnName(declaredField) + " ADD FOREIGN KEY (" + fkColumnName + ") REFERENCES " + getTableName(cls) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
+                System.out.println("key: " + fk);
+                return fk;
+            } else if (declaredField.isAnnotationPresent(ManyToOne.class)) {
+                Class<?> referencedTable = declaredField.getType();
+                String fk = "ALTER TABLE " + getTableName(cls) + " ADD FOREIGN KEY (" + getColumnName(declaredField) + ") REFERENCES " + getTableName(referencedTable) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
+                System.out.println("key: " + fk);
+                return fk;
+            }
+        }
+        return null;
     }
 
 }
