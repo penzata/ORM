@@ -7,7 +7,9 @@ import org.assertj.db.type.DateValue;
 import org.assertj.db.type.Table;
 import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
+import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
+import org.example.exceptionhandler.IdAnnotationNotFoundException;
 import org.example.persistence.annotations.Column;
 import org.example.persistence.annotations.Entity;
 import org.example.persistence.annotations.Id;
@@ -153,6 +155,24 @@ class ORManagerImplTest {
     }
 
     @Test
+    void WhenFindByIdGenericEntityThenReturnsTheCorrectEntityFromDB() {
+        Table createdDudesTable = new Table(dataSource, "dudes");
+        manager.register(Dude.class);
+        Dude dude = new Dude("The Dude", true, 178.3, 1656189648);
+        Dude savedDude = manager.save(dude);
+        log.atDebug().log("{}", savedDude);
+
+        Optional<Dude> foundDude = manager.findById(dude.getId(), Dude.class);
+        boolean isAdult = foundDude.get().isAdult();
+
+        assertThat(foundDude).contains(dude);
+        assertThat(foundDude.get().getHeight()).isEqualTo(178.3);
+        assertTrue(isAdult);
+
+        output(createdDudesTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
     void WhenFindAllThenReturnAllSavedToDBObjects() {
         manager.save(new Student("Ivan", "", 21, LocalDate.now()));
         manager.save(new Student("Petkan", "", 26, LocalDate.now()));
@@ -207,25 +227,28 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenFindByIdGenericEntityThenReturnsTheCorrectEntityFromDB() {
-        Table createdDudesTable = new Table(dataSource, "dudes");
-        manager.register(Dude.class);
-        Dude dude = new Dude("The Dude", true, 178.3, 1656189648);
-        Dude savedDude = manager.save(dude);
-        log.atDebug().log("{}", savedDude);
+    void WhenRegisterAndEntityAnnotationIsNotPresentThenThrowException() {
+        class NoEntity {
+            Integer id;
+            String species;
+        }
 
-        Optional<Dude> foundDude = manager.findById(dude.getId(), Dude.class);
-        boolean isAdult = foundDude.get().isAdult();
-
-        assertThat(foundDude).contains(dude);
-        assertThat(foundDude.get().getHeight()).isEqualTo(178.3);
-        assertTrue(isAdult);
-
-        output(createdDudesTable).toFile("tableFromTest.txt");
+        assertThrows(EntityAnnotationNotFoundException.class, () -> manager.register(NoEntity.class));
     }
 
     @Test
-    void WhenSavingThreeEntitiesTwoDBThenReturnRecordsCountToBeEqualToThree() {
+    void WhenRegisterAndIdAnnotationIsNotPresentThenThrowException() {
+        @Entity
+        class NoId {
+            Integer id;
+            String species;
+        }
+
+        assertThrows(IdAnnotationNotFoundException.class, () -> manager.register(NoId.class));
+    }
+
+    @Test
+    void WhenSavingThreeEntitiesToDBThenReturnRecordsCountToBeEqualToThree() {
         long startCount = manager.recordsCount(Student.class);
 
         Student un = manager.save(new Student("Un", "", 1, LocalDate.now()));
