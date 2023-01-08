@@ -1,5 +1,6 @@
 package org.example.persistence.utilities;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.persistence.annotations.*;
 import org.example.persistence.sql.SQLDialect;
 
@@ -11,7 +12,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@Slf4j
 public class AnnotationUtils {
 
     private AnnotationUtils() {
@@ -147,12 +148,12 @@ public class AnnotationUtils {
                 Class<?> listType = getListType(declaredField);
                 String fkColumnName = getColumnNameFromManyToOne(listType);
                 String fk = "ALTER TABLE " + getColumnName(declaredField) + " ADD FOREIGN KEY (" + fkColumnName + ") REFERENCES " + getTableName(cls) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
-                System.out.println("key: " + fk);
+                log.atInfo().log(fk);
                 return fk;
             } else if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 Class<?> referencedTable = declaredField.getType();
                 String fk = "ALTER TABLE " + getTableName(cls) + " ADD FOREIGN KEY (" + getColumnName(declaredField) + ") REFERENCES " + getTableName(referencedTable) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
-                System.out.println("key: " + fk);
+                log.atInfo().log(fk);
                 return fk;
             }
         }

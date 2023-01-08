@@ -45,7 +45,6 @@ public class ORManagerImpl implements ORManager {
 
 
                 String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
-                System.out.println(registerTransaction);
 
                 log.atDebug().log("table create statement: \n{}", sqlCreateTable);
 
