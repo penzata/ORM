@@ -18,21 +18,20 @@ public class Academy implements Serializable {
     private String name;
 
     @OneToMany(mappedBy = "academies")
-    List<Student> students;
+    ArrayList<Student> students = new ArrayList<>();
 
     Academy() {
     }
 
     public Academy(String name) {
         this.name = name;
-        students = new ArrayList<>();
     }
 
-    public List<Student> getStudents() {
-        return students;
-    }
-
-    public void setStudents(List<Student> students) {
-        this.students = students;
+    @Override
+    public String toString() {
+        return "Academy{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
