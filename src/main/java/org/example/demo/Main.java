@@ -26,5 +26,6 @@ public class Main {
         orManager.findAll(Student.class);
         student.setAge(44);
         orManager.update(student);
+        System.out.println(academy.getStudents());
     }
 }

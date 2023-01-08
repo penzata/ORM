@@ -5,9 +5,11 @@ import org.example.exceptionhandler.EntityAnnotationNotFoundException;
 import org.example.exceptionhandler.EntityNotFoundException;
 import org.example.exceptionhandler.ExceptionHandler;
 import org.example.persistence.annotations.Id;
+import org.example.persistence.annotations.OneToMany;
 
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -237,6 +239,15 @@ public class ORManagerImpl implements ORManager {
         return fieldWithIdAnnotation;
     }
 
+    private static <T> Field getFieldWithOneToManyAnnotation(Class<T> clss) {
+        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(OneToMany.class))
+                .findFirst();
+        Field fieldWithIdAnnotation = firstFoundField.get();
+        fieldWithIdAnnotation.setAccessible(true);
+        return fieldWithIdAnnotation;
+    }
+
     private <T> boolean objectIdIsNotNull(T o) {
         boolean exists = false;
         try {
@@ -293,12 +304,32 @@ public class ORManagerImpl implements ORManager {
                         if (declaredFields[i].get(o) != null) {
                             Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
                             Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
+                            Field fieldWIthOneToManyAnnotation = getFieldWithOneToManyAnnotation(declaredFields[i].getType());
+
+
+                            fieldWIthOneToManyAnnotation.setAccessible(true);
+//                            fieldWIthOneToManyAnnotation.get(o);
+
+                            System.out.println(fieldWIthOneToManyAnnotation.getType());
+                            System.out.println(fieldWIthOneToManyAnnotation.getType());
+                            Class<?> type = declaredFields[i].getType();
+                            Field[] declaredFields1 = type.getDeclaredFields();
+                            System.out.println(declaredFields1[2]);
+
+                            Object byId = declaredFields1[2].getType();
+                            System.out.println(byId);
+                            for (int j = 0; j < declaredFields1.length; j++) {
+                                //System.out.println(declaredFields1[j]);
+                            }
                             ps.setObject(i, objectFieldIdValue);
+                            System.out.println("we here?");
+                            declaredFields1[2].set(o,o);
                         } else {
                             ps.setObject(i, null);
                         }
                     }
                 }
+                System.out.println(ps);
             }
         } catch (IllegalAccessException e) {
             ExceptionHandler.illegalAccess(e);

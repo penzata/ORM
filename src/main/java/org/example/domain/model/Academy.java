@@ -4,6 +4,7 @@ import lombok.Data;
 import org.example.persistence.annotations.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -24,5 +25,14 @@ public class Academy implements Serializable {
 
     public Academy(String name) {
         this.name = name;
+        students = new ArrayList<>();
+    }
+
+    public List<Student> getStudents() {
+        return students;
+    }
+
+    public void setStudents(List<Student> students) {
+        this.students = students;
     }
 }
