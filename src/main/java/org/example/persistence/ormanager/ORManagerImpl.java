@@ -41,22 +41,14 @@ public class ORManagerImpl implements ORManager {
                 String sqlCreateTable = String.format("%s %s%n(%n%s%n);\n", SQL_CREATE_TABLE, tableName,
                         String.join(",\n", columnNames));
                 String fk = createForeignKeyIfAvailable(cls);
-//                System.out.println(sqlCreateTable);
 
 
                 String registerTransaction = "BEGIN TRANSACTION;\n" + sqlCreateTable + (fk == null ? "" : fk) + "\nCOMMIT;";
-
-                log.atDebug().log("table create statement: \n{}", sqlCreateTable);
+                log.atInfo().log(registerTransaction);
 
                 try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(registerTransaction)) {
                     prepStmt.executeUpdate();
 
-//                try (PreparedStatement prepStmt = dataSource.getConnection().prepareStatement(sqlCreateTable)) {
-//
-//
-//                    prepStmt.executeUpdate();
-//                    Statement statement = dataSource.getConnection().createStatement();
-//                    statement.execute(fk);
                 } catch (SQLException e) {
                     ExceptionHandler.sql(e);
                 }

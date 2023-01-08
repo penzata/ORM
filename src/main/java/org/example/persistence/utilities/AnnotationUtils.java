@@ -148,12 +148,10 @@ public class AnnotationUtils {
                 Class<?> listType = getListType(declaredField);
                 String fkColumnName = getColumnNameFromManyToOne(listType);
                 String fk = "ALTER TABLE " + getColumnName(declaredField) + " ADD FOREIGN KEY (" + fkColumnName + ") REFERENCES " + getTableName(cls) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
-                log.atInfo().log(fk);
                 return fk;
             } else if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 Class<?> referencedTable = declaredField.getType();
                 String fk = "ALTER TABLE " + getTableName(cls) + " ADD FOREIGN KEY (" + getColumnName(declaredField) + ") REFERENCES " + getTableName(referencedTable) + "(id) ON DELETE SET NULL ON UPDATE CASCADE;";
-                log.atInfo().log(fk);
                 return fk;
             }
         }
