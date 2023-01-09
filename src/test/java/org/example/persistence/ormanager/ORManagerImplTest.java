@@ -393,6 +393,18 @@ class ORManagerImplTest {
         output(createdStudentsTable).toFile("tableFromTest.txt");
     }
 
+    @Test
+    void WhenRefreshThenReturnCorrectValues() {
+        Table createdDudesTable = new Table(dataSource, "dudes");
+        manager.register(Dude.class);
+        Dude dude = new Dude("Dudeeee", false, 141.1, 777777);
+        manager.save(dude);
+
+        Dude refreshedDude = manager.refresh(dude);
+
+        assertThat(refreshedDude.getHeight()).isGreaterThanOrEqualTo(141.1);
+    }
+
     @Data
     @Entity
     static class Dude {
