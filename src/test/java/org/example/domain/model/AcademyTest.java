@@ -77,8 +77,10 @@ class AcademyTest {
         manager.save(st3);
 
         assertEquals(3, ac.getStudents().size());
+        log.atDebug().log("{}", ac.getStudents());
 
         output(createdStudentsTable).toConsole();
         output(createdAcademiesTable).toConsole();
     }
+
 }
