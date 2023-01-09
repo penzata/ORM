@@ -83,4 +83,13 @@ class AcademyTest {
         output(createdAcademiesTable).toConsole();
     }
 
+    @Test
+    void WhenUsingSetMethodThenGetMethodReturnsCorrectValue() {
+        ac.setName("Khan");
+        ac.setId(5L);
+
+        assertEquals("Khan", ac.getName());
+        assertEquals(5, ac.getId());
+    }
+
 }
