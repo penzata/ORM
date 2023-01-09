@@ -14,9 +14,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import static org.example.persistence.sql.SQLDialect.*;
 import static org.example.persistence.utilities.AnnotationUtils.*;
@@ -28,6 +30,15 @@ public class ORManagerImpl implements ORManager {
 
     public ORManagerImpl(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    private static <T> Field getFieldWithOneToManyAnnotation(Class<T> clss) {
+        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(OneToMany.class))
+                .findFirst();
+        Field fieldWithIdAnnotation = firstFoundField.get();
+        fieldWithIdAnnotation.setAccessible(true);
+        return fieldWithIdAnnotation;
     }
 
     @Override
@@ -140,7 +151,6 @@ public class ORManagerImpl implements ORManager {
         }
     }
 
-  
     public <T> void addObjectToOneToManyField(T o) {
         Field[] declaredFields = o.getClass().getDeclaredFields();
         for (int i = 0; i < declaredFields.length; i++) {
@@ -236,6 +246,15 @@ public class ORManagerImpl implements ORManager {
         return o;
     }
 
+    private static <T> Field getFieldWithIdAnnotation(Class<T> clss) {
+        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(Id.class))
+                .findFirst();
+        Field fieldWithIdAnnotation = firstFoundField.get();
+        fieldWithIdAnnotation.setAccessible(true);
+        return fieldWithIdAnnotation;
+    }
+
     @Override
     public void delete(Object... objects) {
         for (Object object : objects) {
@@ -264,24 +283,6 @@ public class ORManagerImpl implements ORManager {
         return false;
     }
 
-    private static <T> Field getFieldWithIdAnnotation(Class<T> clss) {
-        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
-                .filter(f -> f.isAnnotationPresent(Id.class))
-                .findFirst();
-        Field fieldWithIdAnnotation = firstFoundField.get();
-        fieldWithIdAnnotation.setAccessible(true);
-        return fieldWithIdAnnotation;
-    }
-
-    private static <T> Field getFieldWithOneToManyAnnotation(Class<T> clss) {
-        Optional<Field> firstFoundField = Arrays.stream(clss.getDeclaredFields())
-                .filter(f -> f.isAnnotationPresent(OneToMany.class))
-                .findFirst();
-        Field fieldWithIdAnnotation = firstFoundField.get();
-        fieldWithIdAnnotation.setAccessible(true);
-        return fieldWithIdAnnotation;
-    }
-
     private <T> boolean objectIdIsNotNull(T o) {
         boolean exists = false;
         try {
@@ -304,29 +305,31 @@ public class ORManagerImpl implements ORManager {
     private <T> void replacePlaceholdersInStatement(T o, PreparedStatement ps) throws SQLException {
         try {
             Field[] declaredFields = o.getClass().getDeclaredFields();
+            int parameterIndex = 0;
             for (int i = 0; i < declaredFields.length; i++) {
                 if (declaredFields[i].isAnnotationPresent(Id.class) || declaredFields[i].isAnnotationPresent(OneToMany.class)) {
                     continue;
                 }
                 declaredFields[i].setAccessible(true);
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
+                parameterIndex += 1;
                 switch (fieldTypeName) {
                     case "String" -> {
                         if (declaredFields[i].get(o) != null) {
-                            ps.setString(i, declaredFields[i].get(o).toString());
+                            ps.setString(parameterIndex, declaredFields[i].get(o).toString());
                         } else {
-                            ps.setString(i, null);
+                            ps.setString(parameterIndex, null);
                         }
                     }
-                    case "Long", "long" -> ps.setLong(i, (Long) declaredFields[i].get(o));
-                    case "Integer", "int" -> ps.setInt(i, (Integer) declaredFields[i].get(o));
-                    case "Boolean", "boolean" -> ps.setBoolean(i, (Boolean) declaredFields[i].get(o));
-                    case "Double", "double" -> ps.setDouble(i, (Double) declaredFields[i].get(o));
+                    case "Long", "long" -> ps.setLong(parameterIndex, (Long) declaredFields[i].get(o));
+                    case "Integer", "int" -> ps.setInt(parameterIndex, (Integer) declaredFields[i].get(o));
+                    case "Boolean", "boolean" -> ps.setBoolean(parameterIndex, (Boolean) declaredFields[i].get(o));
+                    case "Double", "double" -> ps.setDouble(parameterIndex, (Double) declaredFields[i].get(o));
                     case "LocalDate" -> {
                         if (declaredFields[i].get(o) != null) {
-                            ps.setDate(i, Date.valueOf(declaredFields[i].get(o).toString()));
+                            ps.setDate(parameterIndex, Date.valueOf(declaredFields[i].get(o).toString()));
                         } else {
-                            ps.setDate(i, null);
+                            ps.setDate(parameterIndex, null);
                         }
                     }
                     case "List", "ArrayList" -> {
@@ -335,9 +338,9 @@ public class ORManagerImpl implements ORManager {
                         if (declaredFields[i].get(o) != null) {
                             Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
                             Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
-                            ps.setObject(i, objectFieldIdValue);
+                            ps.setObject(parameterIndex, objectFieldIdValue);
                         } else {
-                            ps.setObject(i, null);
+                            ps.setObject(parameterIndex, null);
                         }
                     }
                 }
@@ -395,7 +398,8 @@ public class ORManagerImpl implements ORManager {
                             declaredFields[i].set(entityToFind, rs.getDate(columnIndex));
                         }
                     }
-                    case "List", "ArrayList" -> {}
+                    case "List", "ArrayList" -> {
+                    }
                     default -> {
                         Long columnValue = rs.getLong(columnIndex);
                         if (columnValue != 0) {
