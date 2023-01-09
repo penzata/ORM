@@ -299,7 +299,7 @@ public class ORManagerImpl implements ORManager {
         try {
             Field[] declaredFields = o.getClass().getDeclaredFields();
             for (int i = 0; i < declaredFields.length; i++) {
-                if (declaredFields[i].equals(getFieldWithIdAnnotation(o.getClass()))) {
+                if (declaredFields[i].equals(getFieldWithIdAnnotation(o.getClass())) || declaredFields[i].isAnnotationPresent(OneToMany.class)) {
                     continue;
                 }
                 declaredFields[i].setAccessible(true);
