@@ -1,5 +1,9 @@
 package org.example.persistence.annotations;
 
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.Data;
+import org.example.persistence.ormanager.ORManager;
+import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -86,7 +90,7 @@ class AnnotationsTest {
 
     @Test
     void WhenColumnAnnotationIsPresentAndNameIsDefaultThenReturnFieldName() {
-        String expectedTableName = "trialId";
+        String expectedTableName = "trialAge";
 
         Field[] declaredFields = DefaultAnno.class.getDeclaredFields();
         String fieldName = getColumnName(declaredFields[0]);
@@ -120,6 +124,21 @@ class AnnotationsTest {
         assertNotEquals(expectedNullableValue, nullableSet);
     }
 
+    @Test
+    void WhenSaveAndIdAnnotationIsAtRandomPlaceThenReturnCorrectObject() {
+        DefaultAnno defaultAnno = new DefaultAnno(13, "Leatherface");
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        ORManager manager = Utils.withDataSource(dataSource);
+
+        manager.register(DefaultAnno.class);
+        manager.save(defaultAnno);
+
+        assertEquals(1, defaultAnno.getTrialId());
+        dataSource.close();
+    }
+
     @Entity
     @Table(name = "named_table")
     static class WithAnno {
@@ -130,14 +149,22 @@ class AnnotationsTest {
         String trialFirstName;
     }
 
+    @Data
     @Entity
     @Table
     static class DefaultAnno {
+        @Column
+        Integer trialAge;
         @Id
         @Column
         Long trialId;
         @Column
         String trialFirstName;
+
+        public DefaultAnno(Integer trialAge, String trialFirstName) {
+            this.trialAge = trialAge;
+            this.trialFirstName = trialFirstName;
+        }
     }
 
     static class WithoutAnno {
