@@ -343,25 +343,17 @@ class ORManagerImplTest {
     @Test
     void WhenUpdatingRecordInsideDBThenRefreshReturnsUpdatedEntity() throws SQLException {
         Student savedStudent = manager.save(new Student("John", "Doe", 51, null));
-        log.atDebug().log("1) savedStudent object to DB:\n{}\nhashcode: {}", savedStudent, savedStudent.hashCode());
         String updatedOnlyInDbStudent = """
                 UPDATE students
                 SET second_name = 'Travolta', age = 67, graduate_academy = '2018-04-27'
                 WHERE id = 1
                 """;
         connection.prepareStatement(updatedOnlyInDbStudent).executeUpdate();
-        log.atDebug().log("2) savedStudent object to DB, after UPDATE statement in DB:\n{}\nhashcode: {}", savedStudent, savedStudent.hashCode());
 
         Student foundByIdStudent = manager.findById(savedStudent.getId(), Student.class).get();
-        log.atDebug().log("3) Find by ID student form DB [after UPDATE sql statement in DB(not java)]:\n{}\nhashcode: {}", foundByIdStudent, foundByIdStudent.hashCode());
-        log.atDebug().log("3.1) Check savedStudent status:\n{}\nhashcode: {}", savedStudent, savedStudent.hashCode());
 
         Student refreshedStudent = manager.refresh(savedStudent);
-        log.atDebug().log("4) refreshedStudent after refresh on savedStudent:\n{};\nhashcode: {};",
-                refreshedStudent, refreshedStudent.hashCode());
-        log.atDebug().log("4.1) Check savedStudent status:\n{}\nhashcode: {}", savedStudent, savedStudent.hashCode());
 
-        log.atDebug().log("5) Is found by Id student the same as refreshed student: {}", foundByIdStudent.equals(refreshedStudent));
         assertThat(foundByIdStudent).isEqualTo(refreshedStudent);
         assertThat(refreshedStudent).isEqualTo(savedStudent);
         assertThat(refreshedStudent).usingRecursiveComparison().isEqualTo(savedStudent);
@@ -399,6 +391,18 @@ class ORManagerImplTest {
         assertThat(refreshedStudent).isNotNull();
 
         output(createdStudentsTable).toFile("tableFromTest.txt");
+    }
+
+    @Test
+    void WhenRefreshThenReturnCorrectValues() {
+        Table createdDudesTable = new Table(dataSource, "dudes");
+        manager.register(Dude.class);
+        Dude dude = new Dude("Dudeeee", false, 141.1, 777777);
+        manager.save(dude);
+
+        Dude refreshedDude = manager.refresh(dude);
+
+        assertThat(refreshedDude.getHeight()).isGreaterThanOrEqualTo(141.1);
     }
 
     @Data

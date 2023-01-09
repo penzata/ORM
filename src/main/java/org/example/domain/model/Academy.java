@@ -13,11 +13,11 @@ import java.util.List;
 public class Academy implements Serializable {
     @Id
     @Column(name = "id")
-    Long id;
+    private Long id;
     @Column(name = "name", nullable = false)
     private String name;
     @OneToMany(mappedBy = "academies")
-    ArrayList<Student> students = new ArrayList<>();
+    private List<Student> students = new ArrayList<>();
 
     Academy() {
     }
