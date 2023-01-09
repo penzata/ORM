@@ -203,15 +203,21 @@ public class ORManagerImpl implements ORManager {
         }
         try (Connection conn = dataSource.getConnection();
              PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
-            st.setString(1, declaredFields[0].get(o).toString());
+            st.setString(1, getFieldWithIdAnnotation(o.getClass()).get(o).toString());
             log.atInfo().log("{}", st);
             ResultSet rs = st.executeQuery();
             ResultSetMetaData rsMt = rs.getMetaData();
             while (rs.next()) {
-                for (int i = 2; i < rsMt.getColumnCount(); i++) {
+                for (int i = 1; i < rsMt.getColumnCount(); i++) {
+                    if (rsMt.getColumnName(i).equalsIgnoreCase("id")) {
+                        continue;
+                    }
                     switch (rsMt.getColumnTypeName(i)) {
                         case "CHARACTER VARYING" -> declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
                         case "INTEGER" -> declaredFields[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                        case "BIGINT" -> declaredFields[i - 1].set(o, rs.getLong(rsMt.getColumnName(i)));
+                        case "DOUBLE PRECISION" -> declaredFields[i - 1].set(o, rs.getDouble(rsMt.getColumnName(i)));
+                        case "BOOLEAN" -> declaredFields[i - 1].set(o, rs.getBoolean(rsMt.getColumnName(i)));
                         case "DATE" -> {
                             Date sqlDate = rs.getDate(rsMt.getColumnName(i));
                             if (sqlDate != null) {
@@ -330,11 +336,6 @@ public class ORManagerImpl implements ORManager {
                             Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
                             Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
                             ps.setObject(i, objectFieldIdValue);
-//
-//                            Field fieldWIthOneToManyAnnotation = getFieldWithOneToManyAnnotation(declaredFields[i].getType());
-//                            fieldWIthOneToManyAnnotation.setAccessible(true);
-
-
                         } else {
                             ps.setObject(i, null);
                         }
