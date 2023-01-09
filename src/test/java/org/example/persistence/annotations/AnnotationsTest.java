@@ -4,14 +4,50 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.Data;
 import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.utilities.Utils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 import static org.example.persistence.utilities.AnnotationUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AnnotationsTest {
+
+    ORManager manager;
+    HikariDataSource dataSource;
+    Connection connection;
+    PreparedStatement pstmt;
+
+    @AfterEach
+    void tearDown() throws SQLException {
+        pstmt = connection.prepareStatement("DROP TABLE IF EXISTS students");
+        pstmt.executeUpdate();
+        pstmt = connection.prepareStatement("DROP TABLE IF EXISTS academies");
+        pstmt.executeUpdate();
+
+        if (connection != null) {
+            connection.close();
+        }
+        if (dataSource != null) {
+            dataSource.close();
+        }
+        if (pstmt != null) {
+            pstmt.close();
+        }
+    }
+
+    @BeforeEach
+    void setUp() throws SQLException {
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
+        connection = dataSource.getConnection();
+    }
 
     @Test
     void WhenClassIsMarkedWithEntityAnnotationThenReturnTrue() {
@@ -127,10 +163,6 @@ class AnnotationsTest {
     @Test
     void WhenSaveAndIdAnnotationIsAtRandomPlaceThenReturnCorrectObject() {
         DefaultAnno defaultAnno = new DefaultAnno(13, "Leatherface");
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:test");
-        ORManager manager = Utils.withDataSource(dataSource);
 
         manager.register(DefaultAnno.class);
         manager.save(defaultAnno);
