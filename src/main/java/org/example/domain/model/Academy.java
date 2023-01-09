@@ -5,6 +5,7 @@ import org.example.persistence.annotations.*;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -13,10 +14,10 @@ public class Academy implements Serializable {
     @Id
     @Column(name = "id")
     Long id;
-    @OneToMany(mappedBy = "academies")
-    ArrayList<Student> students = new ArrayList<>();
     @Column(name = "name", nullable = false)
     private String name;
+    @OneToMany(mappedBy = "academies")
+    List<Student> students = new ArrayList<>();
 
     Academy() {
     }
