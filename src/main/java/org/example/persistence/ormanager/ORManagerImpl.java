@@ -70,7 +70,7 @@ public class ORManagerImpl implements ORManager {
         try (Statement stmt = dataSource.getConnection().createStatement()) {
             ResultSet rs = stmt.executeQuery("SHOW TABLES;");
             while (rs.next()) {
-                if (getReferencedTableName(cls).equalsIgnoreCase(rs.getString(1))) {
+                if (getTableName(cls).equalsIgnoreCase(rs.getString(1))) {
                     fk = createForeignKey(cls);
                 }
             }
@@ -124,6 +124,8 @@ public class ORManagerImpl implements ORManager {
             }
             ps.setString(placeholderPositionForId, fieldWithIdAnnotation.get(o).toString());
             ps.executeUpdate();
+            removeObjectToOneToManyField(o);
+            addObjectToOneToManyField(o);
             log.atInfo().log("{}", ps);
         } catch (SQLException ex) {
             ExceptionHandler.sql(ex);
@@ -158,12 +160,33 @@ public class ORManagerImpl implements ORManager {
             if (declaredFields[i].isAnnotationPresent(ManyToOne.class)) {
                 Class<?> type = declaredFields[i].getType();
                 Field fieldWIthOneToManyAnnotation = getFieldWithOneToManyAnnotation(declaredFields[i].getType());
-                List<T> list = null;
+                List<T> list;
                 try {
                     if (declaredFields[i].get(o) != null) {
                         list = (List<T>) fieldWIthOneToManyAnnotation.get(declaredFields[i].get(o));
                         fieldWIthOneToManyAnnotation.set(declaredFields[i].get(o), list);
                         list.add(o);
+                    }
+                } catch (IllegalAccessException e) {
+                    ExceptionHandler.illegalAccess(e);
+                }
+            }
+        }
+    }
+
+    public <T> void removeObjectToOneToManyField(T o) {
+        Field[] declaredFields = o.getClass().getDeclaredFields();
+        for (int i = 0; i < declaredFields.length; i++) {
+            declaredFields[i].setAccessible(true);
+            if (declaredFields[i].isAnnotationPresent(ManyToOne.class)) {
+                Class<?> type = declaredFields[i].getType();
+                Field fieldWIthOneToManyAnnotation = getFieldWithOneToManyAnnotation(declaredFields[i].getType());
+                List<T> list;
+                try {
+                    if (declaredFields[i].get(o) != null) {
+                        list = (List<T>) fieldWIthOneToManyAnnotation.get(declaredFields[i].get(o));
+                        fieldWIthOneToManyAnnotation.set(declaredFields[i].get(o), list);
+                        list.remove(o);
                     }
                 } catch (IllegalAccessException e) {
                     ExceptionHandler.illegalAccess(e);
