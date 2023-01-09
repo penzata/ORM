@@ -129,14 +129,14 @@ public class AnnotationUtils {
         return null;
     }
 
-    public static <T> Class<?> getListType(Field field) {
+    private static <T> Class<?> getListType(Field field) {
         ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
         Class<?> stringListClass = (Class<?>) stringListType.getActualTypeArguments()[0];
 
         return stringListClass;
     }
 
-    public static String getColumnNameFromManyToOne(Class<?> cls) {
+    private static String getColumnNameFromManyToOne(Class<?> cls) {
         for (Field declaredField : cls.getDeclaredFields()) {
             if (declaredField.isAnnotationPresent(ManyToOne.class)) {
                 return declaredField.getAnnotation(ManyToOne.class).name();
