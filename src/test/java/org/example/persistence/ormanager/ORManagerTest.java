@@ -21,12 +21,10 @@ import static org.assertj.db.output.Outputs.output;
 
 @Slf4j
 class ORManagerTest {
-    private static final String DATABASE_PATH = "h2.properties";
     ORManager manager;
     HikariDataSource dataSource;
     Connection connection;
     PreparedStatement ps;
-    Source source;
     Table createdStudentsTable;
     Table createdAcademiesTable;
 
@@ -50,13 +48,13 @@ class ORManagerTest {
 
     @BeforeEach
     void setUp() throws SQLException {
-        manager = Utils.withPropertiesFrom(DATABASE_PATH);
-        connection = Utils.getConnection();
-        log.atDebug().log("Is the connection valid: {}", connection.isValid(1000));
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:h2:mem:test");
+        manager = Utils.withDataSource(dataSource);
         manager.register(Academy.class, Student.class);
-        source = new Source("jdbc:h2:file:./src/database/testDB", "", "");
-        createdStudentsTable = new Table(source, "students");
-        createdAcademiesTable = new Table(source, "academies");
+        connection = dataSource.getConnection();
+        createdStudentsTable = new Table(dataSource, "students");
+        createdAcademiesTable = new Table(dataSource, "academies");
 
         Student st5 = new Student("Kurt", "Russell", 44, LocalDate.now());
     }
