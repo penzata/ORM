@@ -166,7 +166,7 @@ public class ORManagerImpl implements ORManager {
                         list.add(o);
                     }
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                    ExceptionHandler.illegalAccess(e);
                 }
             }
         }
@@ -213,30 +213,35 @@ public class ORManagerImpl implements ORManager {
         }
         try (Connection conn = dataSource.getConnection();
              PreparedStatement st = conn.prepareStatement(sqlSelectStatement(o.getClass()), Statement.RETURN_GENERATED_KEYS)) {
-            st.setString(1, getFieldWithIdAnnotation(o.getClass()).get(o).toString());
-            log.atInfo().log("{}", st);
-            ResultSet rs = st.executeQuery();
-            ResultSetMetaData rsMt = rs.getMetaData();
-            while (rs.next()) {
-                for (int i = 1; i < rsMt.getColumnCount(); i++) {
-                    if (rsMt.getColumnName(i).equalsIgnoreCase("id")) {
-                        continue;
-                    }
-                    switch (rsMt.getColumnTypeName(i)) {
-                        case "CHARACTER VARYING" -> declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
-                        case "INTEGER" -> declaredFields[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
-                        case "BIGINT" -> declaredFields[i - 1].set(o, rs.getLong(rsMt.getColumnName(i)));
-                        case "DOUBLE PRECISION" -> declaredFields[i - 1].set(o, rs.getDouble(rsMt.getColumnName(i)));
-                        case "BOOLEAN" -> declaredFields[i - 1].set(o, rs.getBoolean(rsMt.getColumnName(i)));
-                        case "DATE" -> {
-                            Date sqlDate = rs.getDate(rsMt.getColumnName(i));
-                            if (sqlDate != null) {
-                                LocalDate sqlLocalDate = sqlDate.toLocalDate();
-                                declaredFields[i - 1].set(o, sqlLocalDate);
+            Object valueOfIDField = getFieldWithIdAnnotation(o.getClass()).get(o);
+            if (valueOfIDField != null) {
+                st.setString(1, valueOfIDField.toString());
+                log.atInfo().log("{}", st);
+                ResultSet rs = st.executeQuery();
+                ResultSetMetaData rsMt = rs.getMetaData();
+                while (rs.next()) {
+                    for (int i = 1; i < rsMt.getColumnCount(); i++) {
+                        if (rsMt.getColumnName(i).equalsIgnoreCase("id")) {
+                            continue;
+                        }
+                        switch (rsMt.getColumnTypeName(i)) {
+                            case "CHARACTER VARYING" -> declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
+                            case "INTEGER" -> declaredFields[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
+                            case "BIGINT" -> declaredFields[i - 1].set(o, rs.getLong(rsMt.getColumnName(i)));
+                            case "DOUBLE PRECISION" -> declaredFields[i - 1].set(o, rs.getDouble(rsMt.getColumnName(i)));
+                            case "BOOLEAN" -> declaredFields[i - 1].set(o, rs.getBoolean(rsMt.getColumnName(i)));
+                            case "DATE" -> {
+                                Date sqlDate = rs.getDate(rsMt.getColumnName(i));
+                                if (sqlDate != null) {
+                                    LocalDate sqlLocalDate = sqlDate.toLocalDate();
+                                    declaredFields[i - 1].set(o, sqlLocalDate);
+                                }
                             }
                         }
                     }
                 }
+            } else {
+                throw new EntityNotFoundException(o);
             }
         } catch (SQLException e) {
             ExceptionHandler.sql(e);
