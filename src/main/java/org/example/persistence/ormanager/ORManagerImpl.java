@@ -395,8 +395,7 @@ public class ORManagerImpl implements ORManager {
                             declaredFields[i].set(entityToFind, rs.getDate(columnIndex));
                         }
                     }
-                    case "List", "ArrayList" -> {
-                    }
+                    case "List", "ArrayList" -> {}
                     default -> {
                         Long columnValue = rs.getLong(columnIndex);
                         if (columnValue != 0) {
