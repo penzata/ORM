@@ -248,10 +248,12 @@ public class ORManagerImpl implements ORManager {
                             continue;
                         }
                         switch (rsMt.getColumnTypeName(i)) {
-                            case "CHARACTER VARYING" -> declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
+                            case "CHARACTER VARYING" ->
+                                    declaredFields[i - 1].set(o, rs.getString(rsMt.getColumnName(i)));
                             case "INTEGER" -> declaredFields[i - 1].set(o, rs.getInt(rsMt.getColumnName(i)));
                             case "BIGINT" -> declaredFields[i - 1].set(o, rs.getLong(rsMt.getColumnName(i)));
-                            case "DOUBLE PRECISION" -> declaredFields[i - 1].set(o, rs.getDouble(rsMt.getColumnName(i)));
+                            case "DOUBLE PRECISION" ->
+                                    declaredFields[i - 1].set(o, rs.getDouble(rsMt.getColumnName(i)));
                             case "BOOLEAN" -> declaredFields[i - 1].set(o, rs.getBoolean(rsMt.getColumnName(i)));
                             case "DATE" -> {
                                 Date sqlDate = rs.getDate(rsMt.getColumnName(i));
@@ -341,35 +343,23 @@ public class ORManagerImpl implements ORManager {
                 declaredFields[i].setAccessible(true);
                 String fieldTypeName = declaredFields[i].getType().getSimpleName();
                 parameterIndex += 1;
+                if (declaredFields[i].get(o) == null) {
+                    ps.setObject(parameterIndex, null);
+                    continue;
+                }
                 switch (fieldTypeName) {
-                    case "String" -> {
-                        if (declaredFields[i].get(o) != null) {
-                            ps.setString(parameterIndex, declaredFields[i].get(o).toString());
-                        } else {
-                            ps.setString(parameterIndex, null);
-                        }
-                    }
+                    case "String" -> ps.setString(parameterIndex, declaredFields[i].get(o).toString());
                     case "Long", "long" -> ps.setLong(parameterIndex, (Long) declaredFields[i].get(o));
                     case "Integer", "int" -> ps.setInt(parameterIndex, (Integer) declaredFields[i].get(o));
                     case "Boolean", "boolean" -> ps.setBoolean(parameterIndex, (Boolean) declaredFields[i].get(o));
                     case "Double", "double" -> ps.setDouble(parameterIndex, (Double) declaredFields[i].get(o));
-                    case "LocalDate" -> {
-                        if (declaredFields[i].get(o) != null) {
-                            ps.setDate(parameterIndex, Date.valueOf(declaredFields[i].get(o).toString()));
-                        } else {
-                            ps.setDate(parameterIndex, null);
-                        }
-                    }
+                    case "LocalDate" -> ps.setDate(parameterIndex, Date.valueOf(declaredFields[i].get(o).toString()));
                     case "List", "ArrayList" -> {
                     }
                     default -> {
-                        if (declaredFields[i].get(o) != null) {
-                            Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
-                            Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
-                            ps.setObject(parameterIndex, objectFieldIdValue);
-                        } else {
-                            ps.setObject(parameterIndex, null);
-                        }
+                        Field fieldWithIdAnnotation = getFieldWithIdAnnotation(declaredFields[i].getType());
+                        Object objectFieldIdValue = fieldWithIdAnnotation.get(declaredFields[i].get(o));
+                        ps.setObject(parameterIndex, objectFieldIdValue);
                     }
                 }
             }
