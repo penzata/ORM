@@ -1,4 +1,4 @@
-package org.example.persistence.ormanager;
+package org.example.integration;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -6,6 +6,7 @@ import org.assertj.db.type.Table;
 import org.example.domain.model.Academy;
 import org.example.domain.model.Student;
 import org.example.exceptionhandler.EntityNotFoundException;
+import org.example.persistence.ormanager.ORManager;
 import org.example.persistence.utilities.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,7 +25,7 @@ import static org.assertj.db.output.Outputs.output;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-class ORManagerTest {
+class ORManagerIntegrationTest {
     static ORManager manager;
     static HikariDataSource dataSource;
     static Connection connection;

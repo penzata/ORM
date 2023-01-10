@@ -3,7 +3,7 @@
 
     <appender name="file" class="ch.qos.logback.core.FileAppender">
 <!--        change value to false if you want to rewrite the file after every instance-->
-        <param name="Append" value="true"/>
+        <param name="Append" value="false"/>
         <file>${user.dir}/logs/ormManager.log</file>
         <encoder>
             <pattern>%d{yyyy-MM-dd} %d{HH:mm:ss.SSS} %msg%n</pattern>

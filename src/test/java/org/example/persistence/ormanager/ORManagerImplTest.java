@@ -126,6 +126,36 @@ class ORManagerImplTest {
     }
 
     @Test
+    void WhenPersistObjectWithNullPropertyValuesThenRecordWontBeSavedToDbBecauseOfColumnConstraints() {
+        Student studentWithNullFields = new Student(null, null, null, null);
+
+        manager.save(studentWithNullFields);
+
+        assertThat(createdStudentsTable).hasNumberOfRows(0);
+
+        output(createdStudentsTable).toConsole();
+    }
+
+    @Test
+    void WhenSavingObjectWithIdButOtherFieldsAreNullThenRecordWontBeUpdatedInDbBecauseOfColumnConstraints() {
+        Student studentWithNullFields = new Student(null, null, null, null);
+        studentWithNullFields.setId(1L);
+        manager.save(student1);
+
+        manager.save(studentWithNullFields);
+
+        assertThat(createdStudentsTable).row(0)
+                .value().isEqualTo(1)
+                .value().isNotNull()
+                .value().isNotNull()
+                .value().isNotNull()
+                .value().isNotNull()
+                .value().isNull();
+
+        output(createdStudentsTable).toConsole();
+    }
+
+    @Test
     void canFindById() {
         Student savedStudent = manager.save(new Student("Harry", "", 66, LocalDate.now()));
 
