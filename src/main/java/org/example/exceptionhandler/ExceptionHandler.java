@@ -12,14 +12,14 @@ public class ExceptionHandler {
     }
 
     public static void sql(SQLException ex) {
-        log.atError().log("There's some problem with the database access" +
-                " or the SQL statement:", ex);
+        log.atError().log("\n1: Detail message of the SQL Exception problem:\n" +
+                ex.getMessage() + "\n2: Stack trace of this Throwable object: ", ex);
     }
 
     public static void illegalAccess(ReflectiveOperationException ex) {
         log.atError().log("Either the underlying field/method is inaccessible or absent" +
                 " or specified object argument is not an instance of the class" +
-                " or interface declaring the underlying field/method:", ex);
+                " (or interface) declaring the underlying field/method:", ex);
     }
 
     public static void newInstance(ReflectiveOperationException ex) {
