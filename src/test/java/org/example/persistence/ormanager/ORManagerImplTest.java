@@ -126,7 +126,18 @@ class ORManagerImplTest {
     }
 
     @Test
-    void WhenSavingObjectWithIdButOtherFieldsAreNullThenRecordWontBeSaveDueToColumnConstraints() {
+    void WhenPersistObjectWithNullPropertyValuesThenRecordWontBeSavedToDbBecauseOfColumnConstraints() {
+        Student studentWithNullFields = new Student(null, null, null, null);
+
+        manager.save(studentWithNullFields);
+
+        assertThat(createdStudentsTable).hasNumberOfRows(0);
+
+        output(createdStudentsTable).toConsole();
+    }
+
+    @Test
+    void WhenSavingObjectWithIdButOtherFieldsAreNullThenRecordWontBeUpdatedInDbBecauseOfColumnConstraints() {
         Student studentWithNullFields = new Student(null, null, null, null);
         studentWithNullFields.setId(1L);
         manager.save(student1);
